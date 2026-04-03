@@ -138,4 +138,4 @@ Proprietary — NeuraWealth OS. All rights reserved.
 
 ---
 
-*Created by Charley for Angie*
+Built with NeuraWealth OS

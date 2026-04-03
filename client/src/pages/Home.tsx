@@ -514,7 +514,7 @@ export default function Home() {
               </span>
             </div>
             <div className="text-gray-500 text-xs font-mono">
-              Created by Charley for Angie
+              NeuraWealth OS
             </div>
             <div className="text-gray-500 text-xs">
               &copy; {new Date().getFullYear()} NeuraWealth OS. All rights

@@ -186,7 +186,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </nav>
           <div className="absolute bottom-4 left-0 right-0 px-4">
             <div className="text-[10px] text-gray-600 font-mono text-center">
-              Created by Charley for Angie
+              NeuraWealth OS
             </div>
           </div>
         </aside>
