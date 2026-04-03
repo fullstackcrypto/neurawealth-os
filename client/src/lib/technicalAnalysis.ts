@@ -41,7 +41,11 @@ export function calculateRSI(prices: number[], period = 14): number {
   return 100 - 100 / (1 + rs);
 }
 
-export function calculateMACD(prices: number[]): { macd: number; signal: number; histogram: number } {
+export function calculateMACD(prices: number[]): {
+  macd: number;
+  signal: number;
+  histogram: number;
+} {
   if (prices.length < 26) return { macd: 0, signal: 0, histogram: 0 };
   const ema12 = calculateEMA(prices, 12);
   const ema26 = calculateEMA(prices, 26);
@@ -64,20 +68,30 @@ export interface TechnicalSignal {
   signal: SignalType;
 }
 
-export function generateSignal(prices: number[], currentPrice: number): TechnicalSignal {
+export function generateSignal(
+  prices: number[],
+  currentPrice: number
+): TechnicalSignal {
   const rsi = calculateRSI(prices);
   const ema9 = calculateEMA(prices, 9);
   const ema21 = calculateEMA(prices, 21);
   const ema9Current = ema9[ema9.length - 1];
   const ema21Current = ema21[ema21.length - 1];
-  const emaCrossover = ema9Current > ema21Current * 1.002 ? "BULLISH" : ema9Current < ema21Current * 0.998 ? "BEARISH" : "NEUTRAL";
+  const emaCrossover =
+    ema9Current > ema21Current * 1.002
+      ? "BULLISH"
+      : ema9Current < ema21Current * 0.998
+        ? "BEARISH"
+        : "NEUTRAL";
   const macd = calculateMACD(prices);
 
   // AI Confidence Score based on indicator confluence
   let score = 50;
   // RSI contribution
-  if (rsi < 30) score += 15; // oversold = buy signal
-  else if (rsi > 70) score -= 15; // overbought = sell signal
+  if (rsi < 30)
+    score += 15; // oversold = buy signal
+  else if (rsi > 70)
+    score -= 15; // overbought = sell signal
   else if (rsi < 45) score += 8;
   else if (rsi > 55) score -= 8;
 
@@ -98,7 +112,15 @@ export function generateSignal(prices: number[], currentPrice: number): Technica
   if (aiConfidence >= 65) signal = "BUY";
   else if (aiConfidence <= 35) signal = "SELL";
 
-  return { rsi, ema9: ema9Current, ema21: ema21Current, emaCrossover, macd, aiConfidence, signal };
+  return {
+    rsi,
+    ema9: ema9Current,
+    ema21: ema21Current,
+    emaCrossover,
+    macd,
+    aiConfidence,
+    signal,
+  };
 }
 
 export function formatTelegramSignal(
@@ -107,7 +129,12 @@ export function formatTelegramSignal(
   price: number,
   techSignal: TechnicalSignal
 ): string {
-  const emoji = techSignal.signal === "BUY" ? "🟢" : techSignal.signal === "SELL" ? "🔴" : "🟡";
+  const emoji =
+    techSignal.signal === "BUY"
+      ? "🟢"
+      : techSignal.signal === "SELL"
+        ? "🔴"
+        : "🟡";
   return `${emoji} *${coinName} (${symbol.toUpperCase()})* ${emoji}
 
 💰 Price: $${price.toLocaleString(undefined, { maximumFractionDigits: 6 })}

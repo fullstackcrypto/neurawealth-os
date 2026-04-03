@@ -2,8 +2,17 @@
 import { Link, useLocation } from "wouter";
 import { useState, useEffect, type ReactNode } from "react";
 import {
-  LayoutDashboard, Activity, MessageSquare, Bot, Mountain,
-  ShoppingBag, DollarSign, GitBranch, Menu, X, ChevronLeft
+  LayoutDashboard,
+  Activity,
+  MessageSquare,
+  Bot,
+  Mountain,
+  ShoppingBag,
+  DollarSign,
+  GitBranch,
+  Menu,
+  X,
+  ChevronLeft,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -40,10 +49,30 @@ function MarketTicker() {
       } catch {
         // Use fallback data
         setCoins([
-          { id: "bitcoin", symbol: "btc", current_price: 84521, price_change_percentage_24h: 2.4 },
-          { id: "ethereum", symbol: "eth", current_price: 1893, price_change_percentage_24h: -1.2 },
-          { id: "solana", symbol: "sol", current_price: 125.8, price_change_percentage_24h: 5.1 },
-          { id: "binancecoin", symbol: "bnb", current_price: 612, price_change_percentage_24h: 0.8 },
+          {
+            id: "bitcoin",
+            symbol: "btc",
+            current_price: 84521,
+            price_change_percentage_24h: 2.4,
+          },
+          {
+            id: "ethereum",
+            symbol: "eth",
+            current_price: 1893,
+            price_change_percentage_24h: -1.2,
+          },
+          {
+            id: "solana",
+            symbol: "sol",
+            current_price: 125.8,
+            price_change_percentage_24h: 5.1,
+          },
+          {
+            id: "binancecoin",
+            symbol: "bnb",
+            current_price: 612,
+            price_change_percentage_24h: 0.8,
+          },
         ]);
       }
     };
@@ -54,13 +83,23 @@ function MarketTicker() {
 
   if (coins.length === 0) return null;
 
-  const tickerContent = coins.map((c) => (
-    <span key={c.id} className="inline-flex items-center gap-2 px-4 whitespace-nowrap">
-      <span className="text-gray-400 uppercase font-mono text-xs">{c.symbol}</span>
-      <span className="font-mono text-sm text-white">
-        ${c.current_price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+  const tickerContent = coins.map(c => (
+    <span
+      key={c.id}
+      className="inline-flex items-center gap-2 px-4 whitespace-nowrap"
+    >
+      <span className="text-gray-400 uppercase font-mono text-xs">
+        {c.symbol}
       </span>
-      <span className={`font-mono text-xs ${c.price_change_percentage_24h >= 0 ? "text-[#00ff88]" : "text-red-400"}`}>
+      <span className="font-mono text-sm text-white">
+        $
+        {c.current_price.toLocaleString(undefined, {
+          maximumFractionDigits: 2,
+        })}
+      </span>
+      <span
+        className={`font-mono text-xs ${c.price_change_percentage_24h >= 0 ? "text-[#00ff88]" : "text-red-400"}`}
+      >
         {c.price_change_percentage_24h >= 0 ? "+" : ""}
         {c.price_change_percentage_24h.toFixed(2)}%
       </span>
@@ -88,30 +127,45 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#1a1a2e]">
         <Link href="/" className="flex items-center gap-2">
           <ChevronLeft className="w-4 h-4 text-gray-400" />
-          <span className="text-[#00ff88] font-display font-bold text-lg">NW</span>
+          <span className="text-[#00ff88] font-display font-bold text-lg">
+            NW
+          </span>
         </Link>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white">
-          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="text-gray-400 hover:text-white"
+        >
+          {sidebarOpen ? (
+            <X className="w-5 h-5" />
+          ) : (
+            <Menu className="w-5 h-5" />
+          )}
         </button>
       </div>
 
       <div className="flex flex-1">
         {/* Sidebar */}
-        <aside className={`
+        <aside
+          className={`
           fixed lg:sticky top-0 left-0 z-40 h-screen w-64 lg:w-56 bg-[#0d0d14] border-r border-[#1a1a2e]
           transform transition-transform duration-200
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}>
+        `}
+        >
           <div className="p-4 border-b border-[#1a1a2e] hidden lg:block">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00ff88] to-[#00d4ff] flex items-center justify-center">
-                <span className="text-[#0a0a0f] font-display font-bold text-sm">NW</span>
+                <span className="text-[#0a0a0f] font-display font-bold text-sm">
+                  NW
+                </span>
               </div>
-              <span className="font-display font-bold text-white">NeuraWealth</span>
+              <span className="font-display font-bold text-white">
+                NeuraWealth
+              </span>
             </Link>
           </div>
           <nav className="p-3 space-y-1 mt-2 lg:mt-0">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.map(item => {
               const isActive = location === item.path;
               return (
                 <Link
@@ -139,13 +193,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Overlay */}
         {sidebarOpen && (
-          <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />
+          <div
+            className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
         )}
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 p-4 lg:p-6">
-          {children}
-        </main>
+        <main className="flex-1 min-w-0 p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );
