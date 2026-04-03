@@ -3,7 +3,37 @@
  * Calculates RSI, EMA, MACD, and AI confidence scores
  */
 
+/**
+ * Validates any numeric series: must have enough elements and contain only
+ * finite numbers. Used internally when the series may legitimately include
+ * negative values (e.g. the MACD line).
+ */
+function validateFiniteArray(prices: number[], minLength: number, fnName: string): void {
+  if (!Array.isArray(prices) || prices.length < minLength) {
+    throw new Error(
+      `${fnName}: requires at least ${minLength} data points, got ${prices?.length ?? 0}`
+    );
+  }
+  if (prices.some((p) => !isFinite(p))) {
+    throw new Error(`${fnName}: array contains non-finite values (NaN or Infinity)`);
+  }
+}
+
+/**
+ * Validates a raw market price series: must be a finite array AND every
+ * price must be strictly positive. Used for OHLCV inputs from the market.
+ */
+function validatePrices(prices: number[], minLength: number, fnName: string): void {
+  validateFiniteArray(prices, minLength, fnName);
+  if (prices.some((p) => p <= 0)) {
+    throw new Error(`${fnName}: price array contains invalid values (NaN, Infinity, or ≤ 0)`);
+  }
+}
+
 export function calculateEMA(prices: number[], period: number): number[] {
+  // EMA may be called on derived series (e.g. MACD line) that can have
+  // negative values, so we only check finiteness and length here.
+  validateFiniteArray(prices, period, "calculateEMA");
   const ema: number[] = [];
   const multiplier = 2 / (period + 1);
   ema[0] = prices[0];
@@ -14,7 +44,7 @@ export function calculateEMA(prices: number[], period: number): number[] {
 }
 
 export function calculateRSI(prices: number[], period = 14): number {
-  if (prices.length < period + 1) return 50;
+  validatePrices(prices, period + 1, "calculateRSI");
   const changes: number[] = [];
   for (let i = 1; i < prices.length; i++) {
     changes.push(prices[i] - prices[i - 1]);
@@ -42,9 +72,10 @@ export function calculateRSI(prices: number[], period = 14): number {
 }
 
 export function calculateMACD(prices: number[]): { macd: number; signal: number; histogram: number } {
-  if (prices.length < 26) return { macd: 0, signal: 0, histogram: 0 };
+  validatePrices(prices, 26, "calculateMACD");
   const ema12 = calculateEMA(prices, 12);
   const ema26 = calculateEMA(prices, 26);
+  // macdLine can contain negative values (EMA12 < EMA26 in a downtrend)
   const macdLine: number[] = ema12.map((v, i) => v - ema26[i]);
   const signalLine = calculateEMA(macdLine.slice(-9), 9);
   const macd = macdLine[macdLine.length - 1];

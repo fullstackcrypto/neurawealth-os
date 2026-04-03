@@ -42,30 +42,75 @@ setInterval(() => {
 
 async function startServer() {
   const app = express();
+
+  // Trust the first proxy in the chain (Vercel / Railway edge)
+  app.set("trust proxy", 1);
+
+  // Remove the X-Powered-By header to avoid advertising Express version
+  app.disable("x-powered-by");
+
   const server = createServer(app);
 
+  // Build the script-src directive, optionally including the analytics endpoint
+  const analyticsEndpoint = process.env.ANALYTICS_ENDPOINT ?? "";
+  const scriptSrcDirective = analyticsEndpoint
+    ? `script-src 'self' 'unsafe-inline' ${analyticsEndpoint}`
+    : "script-src 'self' 'unsafe-inline'";
+
   // Security headers
+  // Note: 'unsafe-inline' in script-src/style-src is required because the
+  // Vite/React build emits inline bootstrap scripts and styles. A nonce-based
+  // policy is the correct long-term fix but requires SSR integration.
   app.use((_req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    // Note: 'unsafe-inline' is required because the Vite/React build emits
-    // inline styles and bootstrap scripts. In a future iteration, nonces or
-    // a stricter hash-based policy can replace these directives.
     res.setHeader(
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
+        scriptSrcDirective,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: https: blob:",
-        "connect-src 'self' https://api.coingecko.com https:",
+        "connect-src 'self' https://api.coingecko.com https://api.telegram.org https:",
         "frame-ancestors 'none'",
       ].join("; ")
     );
     next();
+  });
+
+  // Parse JSON request bodies for API routes
+  app.use(express.json({ limit: "64kb" }));
+
+  // ─────────────────────────────────────────────────────────
+  // API: Telegram send proxy
+  // Keeps TELEGRAM_BOT_TOKEN server-side — never exposed to the
+  // client bundle.
+  // ─────────────────────────────────────────────────────────
+  app.post("/api/telegram/send", rateLimitMiddleware, async (req, res) => {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) {
+      res.status(503).json({ error: "Telegram bot not configured" });
+      return;
+    }
+
+    try {
+      const telegramRes = await fetch(
+        `https://api.telegram.org/bot${token}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(req.body),
+        }
+      );
+      const data = await telegramRes.json();
+      res.status(telegramRes.status).json(data);
+    } catch (err) {
+      console.error("Telegram API error:", err);
+      res.status(502).json({ error: "Telegram API unreachable" });
+    }
   });
 
   // Serve static files from dist/public in production
@@ -108,3 +153,4 @@ async function startServer() {
 }
 
 startServer().catch(console.error);
+
