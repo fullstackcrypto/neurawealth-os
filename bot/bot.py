@@ -40,6 +40,8 @@ from config import (
     LOG_FORMAT,
     LOG_LEVEL,
     REFERRAL_BONUS_DAYS,
+    STRIPE_ENTERPRISE_PAYMENT_LINK,
+    STRIPE_PREMIUM_PAYMENT_LINK,
     SUBSCRIPTION_TIERS,
     SYMBOL_TO_ID,
     TELEGRAM_BOT_TOKEN,
@@ -47,6 +49,7 @@ from config import (
 from database import Database
 from scheduler import schedule_welcome_sequence, setup_scheduled_jobs
 from signals import format_signal, generate_signals, get_top_signals, set_db
+from stripe_integration import get_payment_link
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -795,17 +798,13 @@ async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             [
                 InlineKeyboardButton(
                     "⭐ Premium — $49/mo",
-                    url=SUBSCRIPTION_TIERS["premium"].get(
-                        "payment_link", "https://buy.stripe.com/PLACEHOLDER"
-                    ),
+                    url=STRIPE_PREMIUM_PAYMENT_LINK,
                 ),
             ],
             [
                 InlineKeyboardButton(
                     "🏢 Enterprise — $149/mo",
-                    url=SUBSCRIPTION_TIERS["enterprise"].get(
-                        "payment_link", "https://buy.stripe.com/PLACEHOLDER"
-                    ),
+                    url=STRIPE_ENTERPRISE_PAYMENT_LINK,
                 ),
             ],
         ]

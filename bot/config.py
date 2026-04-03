@@ -21,9 +21,25 @@ COINGECKO_API_KEY: str = os.getenv("COINGECKO_API_KEY", "")  # Optional pro key
 # ── Database ──────────────────────────────────────────────────────────────────
 DATABASE_PATH: str = os.getenv("DATABASE_PATH", "neurawealth.db")
 
-# ── Stripe (placeholder) ─────────────────────────────────────────────────────
+# ── Stripe ───────────────────────────────────────────────────────────────────
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+# Stripe Product & Price IDs (created 2025-04-03)
+STRIPE_PREMIUM_PRODUCT_ID: str = os.getenv("STRIPE_PREMIUM_PRODUCT_ID", "prod_UGp7kjYfqjD5nF")
+STRIPE_PREMIUM_PRICE_ID: str = os.getenv("STRIPE_PREMIUM_PRICE_ID", "price_1TIHTe04ZWF3w3YV7NoScf1M")
+STRIPE_ENTERPRISE_PRODUCT_ID: str = os.getenv("STRIPE_ENTERPRISE_PRODUCT_ID", "prod_UGp7AAwipK67sq")
+STRIPE_ENTERPRISE_PRICE_ID: str = os.getenv("STRIPE_ENTERPRISE_PRICE_ID", "price_1TIHTg04ZWF3w3YV1o5yiywR")
+
+# Stripe Payment Link URLs (hardcoded — created 2025-04-03)
+STRIPE_PREMIUM_PAYMENT_LINK: str = os.getenv(
+    "STRIPE_PREMIUM_LINK",
+    "https://buy.stripe.com/test_cNi14f76afEw2WSfA5eIw00",
+)
+STRIPE_ENTERPRISE_PAYMENT_LINK: str = os.getenv(
+    "STRIPE_ENTERPRISE_LINK",
+    "https://buy.stripe.com/test_5kQ14f4Y22RKapk87DeIw01",
+)
 
 # ── Free Trial & Referral ────────────────────────────────────────────────────
 FREE_TRIAL_DAYS: int = int(os.getenv("FREE_TRIAL_DAYS", "3"))
@@ -64,7 +80,7 @@ SUBSCRIPTION_TIERS = {
         "emoji": "⭐",
         "payment_link": os.getenv(
             "STRIPE_PREMIUM_LINK",
-            "https://buy.stripe.com/PLACEHOLDER_PREMIUM",
+            "https://buy.stripe.com/test_cNi14f76afEw2WSfA5eIw00",
         ),
     },
     "enterprise": {
@@ -79,7 +95,7 @@ SUBSCRIPTION_TIERS = {
         "emoji": "🏢",
         "payment_link": os.getenv(
             "STRIPE_ENTERPRISE_LINK",
-            "https://buy.stripe.com/PLACEHOLDER_ENTERPRISE",
+            "https://buy.stripe.com/test_5kQ14f4Y22RKapk87DeIw01",
         ),
     },
 }
