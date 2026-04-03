@@ -22,7 +22,9 @@ function LoadingFallback() {
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-2 border-[#00ff88] border-t-transparent rounded-full animate-spin" />
-        <span className="text-[#00ff88] font-mono text-sm">Loading module...</span>
+        <span className="text-[#00ff88] font-mono text-sm">
+          Loading module...
+        </span>
       </div>
     </div>
   );
@@ -34,28 +36,44 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/dashboard">
-          <AppLayout><Dashboard /></AppLayout>
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
         </Route>
         <Route path="/signals">
-          <AppLayout><Signals /></AppLayout>
+          <AppLayout>
+            <Signals />
+          </AppLayout>
         </Route>
         <Route path="/telegram">
-          <AppLayout><Telegram /></AppLayout>
+          <AppLayout>
+            <Telegram />
+          </AppLayout>
         </Route>
         <Route path="/bot">
-          <AppLayout><Bot /></AppLayout>
+          <AppLayout>
+            <Bot />
+          </AppLayout>
         </Route>
         <Route path="/mining">
-          <AppLayout><Mining /></AppLayout>
+          <AppLayout>
+            <Mining />
+          </AppLayout>
         </Route>
         <Route path="/marketplace">
-          <AppLayout><Marketplace /></AppLayout>
+          <AppLayout>
+            <Marketplace />
+          </AppLayout>
         </Route>
         <Route path="/revenue">
-          <AppLayout><Revenue /></AppLayout>
+          <AppLayout>
+            <Revenue />
+          </AppLayout>
         </Route>
         <Route path="/pipeline">
-          <AppLayout><Pipeline /></AppLayout>
+          <AppLayout>
+            <Pipeline />
+          </AppLayout>
         </Route>
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />

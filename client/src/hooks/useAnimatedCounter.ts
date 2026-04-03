@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 
-export function useAnimatedCounter(target: number, duration = 1500, decimals = 0) {
+export function useAnimatedCounter(
+  target: number,
+  duration = 1500,
+  decimals = 0
+) {
   const [count, setCount] = useState(0);
   const startTime = useRef<number | null>(null);
   const rafId = useRef<number>(0);
@@ -34,7 +38,9 @@ export function useInView(threshold = 0.1) {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setInView(true); },
+      ([entry]) => {
+        if (entry.isIntersecting) setInView(true);
+      },
       { threshold }
     );
     observer.observe(el);
