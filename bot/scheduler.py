@@ -6,6 +6,8 @@ Manages recurring jobs:
   • Price alert monitoring every 60 seconds
   • Daily market summary at 8 AM UTC
   • Welcome sequence for new users (3 messages over 24 hours)
+  • Signal accuracy evaluation (hourly)
+  • Free trial expiration checks (hourly)
 """
 
 from __future__ import annotations
@@ -20,9 +22,12 @@ from telegram.ext import ContextTypes
 
 from coingecko import cg_client
 from config import (
+    ACCURACY_CHECK_INTERVAL_HOURS,
     ALERT_CHECK_INTERVAL_SECONDS,
     DAILY_REPORT_HOUR_UTC,
+    FREE_TRIAL_DAYS,
     SIGNAL_INTERVAL_HOURS,
+    TRIAL_CHECK_INTERVAL_HOURS,
     WELCOME_DELAYS,
 )
 from database import Database
@@ -212,6 +217,101 @@ async def send_daily_report(context: ContextTypes.DEFAULT_TYPE) -> None:
             )
 
 
+async def check_signal_accuracy(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Evaluate signals that are 24h+ old and record outcomes."""
+    db: Database = context.bot_data["db"]
+    unchecked = db.get_unchecked_signals(min_age_hours=24)
+
+    if not unchecked:
+        return
+
+    logger.info("Checking accuracy for %d signals", len(unchecked))
+
+    # Collect unique coin IDs
+    coin_ids = list({s["coin_id"] for s in unchecked})
+
+    try:
+        prices = await cg_client.get_price(coin_ids)
+    except Exception as exc:
+        logger.error("Failed to fetch prices for accuracy check: %s", exc)
+        return
+
+    if not prices:
+        return
+
+    for sig in unchecked:
+        coin_id = sig["coin_id"]
+        if coin_id not in prices:
+            continue
+
+        current_price = prices[coin_id].get("usd", 0)
+        if current_price <= 0:
+            continue
+
+        signal_price = sig["price"]
+        signal_type = sig["signal_type"]
+        pnl_pct = ((current_price - signal_price) / signal_price) * 100
+
+        # Determine correctness
+        if signal_type == "BUY":
+            outcome = "correct" if current_price > signal_price else "incorrect"
+        elif signal_type == "SELL":
+            outcome = "correct" if current_price < signal_price else "incorrect"
+        else:
+            outcome = "neutral"
+
+        db.update_signal_outcome(
+            signal_id=sig["id"],
+            outcome_price=current_price,
+            outcome=outcome,
+            pnl_percent=pnl_pct,
+        )
+        logger.info(
+            "Signal #%d (%s %s @ %.2f) → %s (now %.2f, PnL %.2f%%)",
+            sig["id"], signal_type, sig.get("symbol", coin_id),
+            signal_price, outcome, current_price, pnl_pct,
+        )
+
+
+async def check_expired_trials(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Downgrade expired trial users and notify them."""
+    db: Database = context.bot_data["db"]
+    expired = db.get_expired_trials()
+
+    if not expired:
+        return
+
+    logger.info("Processing %d expired trials", len(expired))
+
+    for user in expired:
+        db.expire_trial(user["user_id"])
+        msg = (
+            "⏰ <b>Your Free Trial Has Ended</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Your {FREE_TRIAL_DAYS}-day free trial of NeuraWealth Premium is over.\n\n"
+            "You enjoyed:\n"
+            "  🟢 AI-powered trading signals\n"
+            "  🔔 Real-time price alerts\n"
+            "  💼 Portfolio tracking\n"
+            "  📋 Daily market reports\n\n"
+            "Don't lose your edge — upgrade now!\n\n"
+            "⭐ <b>Premium — $49/mo</b>\n"
+            "🏢 <b>Enterprise — $149/mo</b>\n\n"
+            "→ /subscribe to continue\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<i>Created by Charley for Angie</i>"
+        )
+        try:
+            await context.bot.send_message(
+                chat_id=user["user_id"],
+                text=msg,
+                parse_mode=ParseMode.HTML,
+            )
+            logger.info("Trial expiry notice sent to user %d", user["user_id"])
+        except Exception as exc:
+            logger.error("Failed to send trial expiry to %d: %s", user["user_id"], exc)
+
+
 # ── Scheduler Setup ───────────────────────────────────────────────────────────
 
 
@@ -259,3 +359,21 @@ def setup_scheduled_jobs(app: "Application") -> None:
         name="daily_report",
     )
     logger.info("Scheduled daily report at %02d:00 UTC", DAILY_REPORT_HOUR_UTC)
+
+    # Signal accuracy evaluation every hour
+    jq.run_repeating(
+        check_signal_accuracy,
+        interval=ACCURACY_CHECK_INTERVAL_HOURS * 3600,
+        first=120,
+        name="accuracy_check",
+    )
+    logger.info("Scheduled accuracy checks every %d hours", ACCURACY_CHECK_INTERVAL_HOURS)
+
+    # Trial expiration check every hour
+    jq.run_repeating(
+        check_expired_trials,
+        interval=TRIAL_CHECK_INTERVAL_HOURS * 3600,
+        first=180,
+        name="trial_check",
+    )
+    logger.info("Scheduled trial expiration checks every %d hours", TRIAL_CHECK_INTERVAL_HOURS)

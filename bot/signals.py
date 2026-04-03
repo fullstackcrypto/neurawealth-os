@@ -2,12 +2,14 @@
 NeuraWealth OS Telegram Bot — Signal Generation Engine
 ======================================================
 Fetches live market data from CoinGecko, runs technical analysis,
-and produces formatted Telegram-ready signal messages.
+and produces formatted Telegram-ready signal messages with premium
+formatting, target/stop-loss levels, and accuracy tracking.
 """
 
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 
 from coingecko import cg_client
@@ -16,6 +18,15 @@ from technical_analysis import Signal, TAResult, analyse_coin
 
 logger = logging.getLogger(__name__)
 
+# Lazy import to avoid circular dependency — set by bot.py at startup
+_db = None
+
+
+def set_db(database):
+    """Set the database reference for signal logging."""
+    global _db
+    _db = database
+
 
 # ── Formatting Helpers ────────────────────────────────────────────────────────
 
@@ -23,6 +34,12 @@ SIGNAL_EMOJI = {
     Signal.BUY: "🟢",
     Signal.SELL: "🔴",
     Signal.HOLD: "🟡",
+}
+
+SIGNAL_LABEL = {
+    Signal.BUY: "STRONG BUY",
+    Signal.SELL: "STRONG SELL",
+    Signal.HOLD: "HOLD",
 }
 
 
@@ -46,45 +63,105 @@ def _confidence_bar(score: float) -> str:
     return "█" * filled + "░" * empty
 
 
-def format_signal(ta: TAResult, rank: Optional[int] = None) -> str:
-    """Format a single TAResult into a Telegram-ready HTML message block."""
+def _compute_target_stop(ta: TAResult) -> tuple[float, float]:
+    """Compute target price and stop-loss based on signal and volatility."""
+    price = ta.current_price
+    # Use confidence to scale target: higher confidence = wider target
+    confidence_factor = ta.confidence / 100.0
+    if ta.signal == Signal.BUY:
+        target = price * (1 + 0.03 + 0.07 * confidence_factor)  # 3-10% upside
+        stop = price * (1 - 0.02 - 0.03 * confidence_factor)    # 2-5% downside
+    elif ta.signal == Signal.SELL:
+        target = price * (1 - 0.03 - 0.07 * confidence_factor)  # 3-10% downside
+        stop = price * (1 + 0.02 + 0.03 * confidence_factor)    # 2-5% upside
+    else:
+        target = price * 1.03
+        stop = price * 0.97
+    return round(target, 2), round(stop, 2)
+
+
+def _rsi_label(rsi: float) -> str:
+    if rsi < 30:
+        return "Oversold"
+    elif rsi < 40:
+        return "Near oversold"
+    elif rsi > 70:
+        return "Overbought"
+    elif rsi > 60:
+        return "Near overbought"
+    return "Neutral"
+
+
+def _macd_label(ta: TAResult) -> str:
+    if ta.macd_crossover == "bullish":
+        return "Bullish crossover"
+    elif ta.macd_crossover == "bearish":
+        return "Bearish crossover"
+    elif ta.macd_histogram is not None:
+        return "Positive momentum" if ta.macd_histogram > 0 else "Negative momentum"
+    return "Neutral"
+
+
+def _ema_label(ta: TAResult) -> str:
+    if ta.ema_crossover == "bullish":
+        return "Golden cross"
+    elif ta.ema_crossover == "bearish":
+        return "Death cross"
+    elif ta.ema_short is not None and ta.ema_long is not None:
+        return "Bullish trend" if ta.ema_short > ta.ema_long else "Bearish trend"
+    return "Neutral"
+
+
+def format_signal_premium(ta: TAResult, rank: Optional[int] = None, accuracy_7d: float = 0.0, signal_number: int = 0) -> str:
+    """Format a single TAResult into a premium Telegram-ready HTML message block."""
     emoji = SIGNAL_EMOJI[ta.signal]
-    header = f"{emoji} <b>{ta.signal.value}</b> | {ta.symbol}"
-    if rank is not None:
-        header = f"#{rank} {header}"
+    label = SIGNAL_LABEL[ta.signal]
+    target, stop = _compute_target_stop(ta)
+
+    # Coin name from symbol
+    coin_name = ta.symbol
+
+    target_pct = ((target - ta.current_price) / ta.current_price) * 100
+    stop_pct = ((stop - ta.current_price) / ta.current_price) * 100
+
+    now_str = datetime.now(timezone.utc).strftime("%b %d, %Y")
 
     lines = [
-        header,
-        f"💰 Price: <code>{_format_price(ta.current_price)}</code>",
-        f"📊 24h: {_format_change(ta.price_change_24h)}",
-        f"🎯 Confidence: <b>{ta.confidence:.0f}/100</b>  [{_confidence_bar(ta.confidence)}]",
-        "",
-        "<b>Indicators:</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+        f"{emoji} <b>{label} — {coin_name}</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+        f"💰 Price: <code>{_format_price(ta.current_price)}</code> ({ta.price_change_24h:+.1f}%)",
+        f"📊 Confidence: <b>{ta.confidence:.0f}/100</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
     ]
 
     if ta.rsi is not None:
-        lines.append(f"  • RSI(14): <code>{ta.rsi:.1f}</code>")
-    if ta.ema_short is not None and ta.ema_long is not None:
-        lines.append(
-            f"  • EMA 9/21: <code>{_format_price(ta.ema_short)}</code> / <code>{_format_price(ta.ema_long)}</code>"
-        )
-    if ta.macd_line is not None:
-        lines.append(f"  • MACD: <code>{ta.macd_line:.4f}</code>")
-    if ta.macd_histogram is not None:
-        hist_emoji = "📗" if ta.macd_histogram > 0 else "📕"
-        lines.append(f"  • Histogram: {hist_emoji} <code>{ta.macd_histogram:.4f}</code>")
+        lines.append(f"📈 RSI(14): <code>{ta.rsi:.1f}</code> — {_rsi_label(ta.rsi)}")
+    lines.append(f"📉 MACD: {_macd_label(ta)}")
+    lines.append(f"📊 EMA(9/21): {_ema_label(ta)}")
+    lines.append("━━━━━━━━━━━━━━━━━━━━")
+    lines.append(f"🎯 Target: <code>{_format_price(target)}</code> ({target_pct:+.1f}%)")
+    lines.append(f"🛡️ Stop Loss: <code>{_format_price(stop)}</code> ({stop_pct:+.1f}%)")
+    lines.append("━━━━━━━━━━━━━━━━━━━━")
 
-    if ta.reasoning:
-        lines.append("")
-        lines.append("<b>Analysis:</b>")
-        for reason in ta.reasoning:
-            lines.append(f"  → {reason}")
+    acc_str = f"{accuracy_7d:.0f}%" if accuracy_7d > 0 else "Tracking..."
+    lines.append(f"✅ Bot Accuracy: {acc_str} (7-day)")
+    if signal_number > 0:
+        lines.append(f"⏰ Signal #{signal_number:,} | {now_str}")
+    else:
+        lines.append(f"⏰ {now_str}")
+    lines.append("━━━━━━━━━━━━━━━━━━━━")
 
     return "\n".join(lines)
 
 
-def format_signal_summary(signals: list[TAResult], top_n: int = 3) -> str:
-    """Format the top-N buy signals into a single Telegram message."""
+def format_signal(ta: TAResult, rank: Optional[int] = None) -> str:
+    """Format a single TAResult into a Telegram-ready HTML message block (legacy)."""
+    return format_signal_premium(ta, rank)
+
+
+def format_signal_summary(signals: list[TAResult], top_n: int = 3, accuracy_7d: float = 0.0, signal_count: int = 0) -> str:
+    """Format the top-N buy signals into a single Telegram message with premium formatting."""
     buy_signals = sorted(
         [s for s in signals if s.signal == Signal.BUY],
         key=lambda s: s.confidence,
@@ -101,11 +178,30 @@ def format_signal_summary(signals: list[TAResult], top_n: int = 3) -> str:
     )
     blocks = []
     for i, sig in enumerate(buy_signals, 1):
-        blocks.append(format_signal(sig, rank=i))
+        blocks.append(format_signal_premium(sig, rank=i, accuracy_7d=accuracy_7d, signal_number=signal_count + i))
+
+    # Log signals to database
+    if _db is not None:
+        for sig in buy_signals:
+            target, stop = _compute_target_stop(sig)
+            try:
+                _db.log_signal(
+                    coin_id=sig.coin_id,
+                    signal_type=sig.signal.value,
+                    confidence=sig.confidence,
+                    price=sig.current_price,
+                    reasoning="; ".join(sig.reasoning),
+                    symbol=sig.symbol,
+                    target_price=target,
+                    stop_loss=stop,
+                )
+            except Exception as exc:
+                logger.error("Failed to log signal for %s: %s", sig.symbol, exc)
 
     footer = (
         "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         "⏰ Updated just now  |  /signals to refresh\n"
+        "📊 /accuracy — View signal accuracy\n"
         "⭐ Upgrade to Premium for auto-delivery → /subscribe"
     )
 
@@ -153,6 +249,7 @@ def format_daily_report(signals: list[TAResult]) -> str:
     lines.extend([
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "📊 /signals for detailed analysis",
+        "📈 /accuracy — Signal accuracy stats",
         "💼 /portfolio to track your holdings",
     ])
 
@@ -221,7 +318,19 @@ async def get_top_signals(top_n: int = 3) -> str:
     signals = await generate_signals()
     if not signals:
         return "⚠️ Unable to generate signals right now. Please try again later."
-    return format_signal_summary(signals, top_n=top_n)
+
+    # Get accuracy stats for display
+    accuracy_7d = 0.0
+    signal_count = 0
+    if _db is not None:
+        try:
+            stats = _db.get_accuracy_stats(days=7)
+            accuracy_7d = stats["accuracy"]
+            signal_count = _db.get_total_signals()
+        except Exception:
+            pass
+
+    return format_signal_summary(signals, top_n=top_n, accuracy_7d=accuracy_7d, signal_count=signal_count)
 
 
 async def get_daily_report() -> str:

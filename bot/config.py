@@ -12,6 +12,7 @@ load_dotenv()
 
 # ── Telegram ──────────────────────────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+BOT_USERNAME: str = os.getenv("BOT_USERNAME", "NeuraWealthBot")
 
 # ── CoinGecko ─────────────────────────────────────────────────────────────────
 COINGECKO_BASE_URL: str = "https://api.coingecko.com/api/v3"
@@ -24,14 +25,32 @@ DATABASE_PATH: str = os.getenv("DATABASE_PATH", "neurawealth.db")
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
+# ── Free Trial & Referral ────────────────────────────────────────────────────
+FREE_TRIAL_DAYS: int = int(os.getenv("FREE_TRIAL_DAYS", "3"))
+REFERRAL_BONUS_DAYS: int = int(os.getenv("REFERRAL_BONUS_DAYS", "7"))
+
 # ── Subscription Tiers ────────────────────────────────────────────────────────
 SUBSCRIPTION_TIERS = {
     "free": {
         "name": "Free",
         "price": 0,
-        "commands": ["start", "price", "trending", "help", "subscribe"],
+        "commands": [
+            "start", "price", "trending", "help", "subscribe",
+            "refer", "accuracy", "performance",
+        ],
         "description": "Basic market data access",
         "emoji": "🆓",
+    },
+    "trial": {
+        "name": "Free Trial",
+        "price": 0,
+        "commands": [
+            "start", "price", "trending", "help", "subscribe",
+            "signals", "portfolio", "add", "remove", "alert",
+            "report", "refer", "accuracy", "performance",
+        ],
+        "description": "3-day full access trial",
+        "emoji": "🎁",
     },
     "premium": {
         "name": "Premium",
@@ -39,7 +58,7 @@ SUBSCRIPTION_TIERS = {
         "commands": [
             "start", "price", "trending", "help", "subscribe",
             "signals", "portfolio", "add", "remove", "alert",
-            "report",
+            "report", "refer", "accuracy", "performance",
         ],
         "description": "Full signals, alerts, portfolio & daily reports",
         "emoji": "⭐",
@@ -54,7 +73,7 @@ SUBSCRIPTION_TIERS = {
         "commands": [
             "start", "price", "trending", "help", "subscribe",
             "signals", "portfolio", "add", "remove", "alert",
-            "report",
+            "report", "refer", "accuracy", "performance",
         ],
         "description": "All Premium features + API access + priority signals",
         "emoji": "🏢",
@@ -127,6 +146,8 @@ SYMBOL_TO_ID: dict[str, str] = {
 SIGNAL_INTERVAL_HOURS: int = 4
 ALERT_CHECK_INTERVAL_SECONDS: int = 60
 DAILY_REPORT_HOUR_UTC: int = 8
+ACCURACY_CHECK_INTERVAL_HOURS: int = 1  # check signal outcomes hourly
+TRIAL_CHECK_INTERVAL_HOURS: int = 1     # check expired trials hourly
 
 # ── Rate Limiting ─────────────────────────────────────────────────────────────
 COINGECKO_RATE_LIMIT: float = 1.5  # seconds between API calls (free tier)
