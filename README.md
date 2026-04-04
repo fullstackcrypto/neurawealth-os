@@ -106,7 +106,7 @@ Copy `.env.example` to `.env` and fill in the values. **Never commit `.env` to v
 | `VITE_ANALYTICS_ENDPOINT`   | No       | Umami analytics base URL                         |
 | `VITE_ANALYTICS_WEBSITE_ID` | No       | Umami website ID                                 |
 | `VITE_COINGECKO_API_KEY`    | No       | CoinGecko Pro API key (increases rate limits)    |
-| `VITE_TELEGRAM_BOT_TOKEN`   | No       | Telegram Bot token from @BotFather               |
+| `TELEGRAM_BOT_TOKEN`        | No       | Telegram Bot token (server-side only)            |
 | `VITE_GOOGLE_MAPS_API_KEY`  | No       | Google Maps JavaScript API key (for Map feature) |
 
 > **Security note:** Variables prefixed with `VITE_` are embedded into the client bundle and are publicly visible. Never store private keys or secrets in `VITE_` variables.

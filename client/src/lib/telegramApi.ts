@@ -86,6 +86,21 @@ export function formatDailyReport(
   ].join("\n");
 }
 
+/**
+ * Send a message to Telegram via the server-side proxy endpoint.
+ * This keeps the bot token secure on the server.
+ */
+export async function sendTelegramSignal(chatId: number, message: string): Promise<void> {
+  const response = await fetch('/api/telegram/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'Markdown' }),
+  });
+  if (!response.ok) {
+    throw new Error(`Telegram send failed: ${response.status}`);
+  }
+}
+
 // Bot command handlers
 export const BOT_COMMANDS: BotCommand[] = [
   {
