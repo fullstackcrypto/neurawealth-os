@@ -179,3 +179,27 @@ export const BOT_COMMANDS: BotCommand[] = [
  *   res.sendStatus(200);
  * });
  */
+
+/**
+ * Send a message to a Telegram chat via the server-side proxy.
+ *
+ * The server reads TELEGRAM_BOT_TOKEN from its environment, so the token is
+ * never exposed in the client bundle.
+ */
+export async function sendTelegramSignal(
+  chatId: number,
+  message: string
+): Promise<void> {
+  const response = await fetch("/api/telegram/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: message,
+      parse_mode: "Markdown",
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Telegram send failed: ${response.status}`);
+  }
+}
