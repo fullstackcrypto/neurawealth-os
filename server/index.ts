@@ -65,10 +65,10 @@ app.post("/api/telegram/send", async (req, res) => {
   const text = body.text;
   const parse_mode = body.parse_mode;
 
-  // Validate that chat_id is a non-empty number or string, and text is a non-empty string
+  // Validate that chat_id is a non-empty number or non-empty string, and text is a non-empty string
   if (
     (typeof chat_id !== "number" && typeof chat_id !== "string") ||
-    !chat_id ||
+    (typeof chat_id === "string" && !chat_id.trim()) ||
     typeof text !== "string" ||
     !text.trim()
   ) {
@@ -76,8 +76,15 @@ app.post("/api/telegram/send", async (req, res) => {
     return;
   }
 
+  // Restrict parse_mode to values accepted by the Telegram Bot API
+  const ALLOWED_PARSE_MODES = ["Markdown", "MarkdownV2", "HTML"] as const;
   const resolvedParseMode =
-    typeof parse_mode === "string" ? parse_mode : "Markdown";
+    typeof parse_mode === "string" &&
+    ALLOWED_PARSE_MODES.includes(
+      parse_mode as (typeof ALLOWED_PARSE_MODES)[number]
+    )
+      ? parse_mode
+      : "Markdown";
 
   try {
     const response = await fetch(

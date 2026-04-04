@@ -200,9 +200,13 @@ export async function sendTelegramSignal(
     }),
   });
   if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(
-      `Telegram send failed: ${response.status} ${response.statusText}${body ? ` — ${body}` : ""}`
-    );
+    let detail = response.statusText;
+    try {
+      const err = (await response.json()) as Record<string, unknown>;
+      if (typeof err.error === "string") detail = err.error;
+    } catch {
+      // ignore JSON parse errors; fall back to statusText
+    }
+    throw new Error(`Telegram send failed: ${response.status} — ${detail}`);
   }
 }
