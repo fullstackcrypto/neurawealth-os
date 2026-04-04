@@ -42,6 +42,16 @@ const apiLimiter = rateLimit({
 
 app.use("/api", apiLimiter);
 
+// General rate limiter applied to all other routes (including the SPA fallback)
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(generalLimiter);
+
 // Telegram send-message proxy — keeps the bot token server-side only
 app.post("/api/telegram/send", async (req, res) => {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -50,16 +60,24 @@ app.post("/api/telegram/send", async (req, res) => {
     return;
   }
 
-  const { chat_id, text, parse_mode } = req.body as {
-    chat_id?: unknown;
-    text?: unknown;
-    parse_mode?: unknown;
-  };
+  const body = req.body as Record<string, unknown>;
+  const chat_id = body.chat_id;
+  const text = body.text;
+  const parse_mode = body.parse_mode;
 
-  if (!chat_id || !text) {
+  // Validate that chat_id is a non-empty number or string, and text is a non-empty string
+  if (
+    (typeof chat_id !== "number" && typeof chat_id !== "string") ||
+    !chat_id ||
+    typeof text !== "string" ||
+    !text.trim()
+  ) {
     res.status(400).json({ error: "chat_id and text are required" });
     return;
   }
+
+  const resolvedParseMode =
+    typeof parse_mode === "string" ? parse_mode : "Markdown";
 
   try {
     const response = await fetch(
@@ -70,12 +88,13 @@ app.post("/api/telegram/send", async (req, res) => {
         body: JSON.stringify({
           chat_id,
           text,
-          parse_mode: parse_mode ?? "Markdown",
+          parse_mode: resolvedParseMode,
         }),
       }
     );
-    const data = await response.json();
-    res.json(data);
+    const data = (await response.json()) as Record<string, unknown>;
+    // Forward only the fields the caller needs; do not leak internal Telegram details
+    res.json({ ok: data.ok, result: data.ok ? data.result : undefined });
   } catch (error) {
     console.error("Telegram API error:", error);
     res.status(502).json({ error: "Failed to reach Telegram API" });
