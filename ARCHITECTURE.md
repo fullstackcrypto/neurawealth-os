@@ -9,11 +9,13 @@ This document outlines the agreed-upon architectural standards, deployment strat
 NeuraWealth OS is a 24/7 automated financial platform. It requires a decoupled deployment architecture to ensure high availability, fast global content delivery, and persistent background processes.
 
 ### Frontend (PWA) — Vercel
+
 - **Target:** Vercel Edge Network
 - **Why:** Zero-configuration global CDN, native SPA routing support, automatic HTTPS, and fast cold starts.
 - **Configuration:** The `vercel.json` file handles routing, directing `/api/*` requests to the backend service.
 
 ### Backend (API & Bot) — Railway
+
 - **Target:** Railway.app (Paid Tier)
 - **Why:** Provides a persistent Node.js process without cold starts, which is critical for receiving Telegram webhooks and executing scheduled trading logic.
 - **Configuration:** Handles all Express routes, rate limiting, and external API proxying.
@@ -25,11 +27,13 @@ NeuraWealth OS is a 24/7 automated financial platform. It requires a decoupled d
 Security is paramount for a platform handling financial data and API keys.
 
 ### Environment Variables & Secrets
+
 - **Never expose secrets to the client.** Variables prefixed with `VITE_` are embedded in the client bundle and are publicly visible.
 - **API Keys:** The Telegram Bot Token (`TELEGRAM_BOT_TOKEN`), CoinGecko Pro Key, and any exchange API keys MUST live exclusively on the Railway backend.
 - **Proxy Pattern:** The client MUST route sensitive requests through the backend (e.g., `/api/telegram/send`) rather than calling external APIs directly.
 
 ### HTTP Security Headers
+
 - The backend MUST use `helmet` to enforce security headers.
 - **Content Security Policy (CSP):** We aim to eliminate `'unsafe-inline'` for scripts. Future iterations will implement nonce-based or hash-based CSPs.
 - **Rate Limiting:** Implement tiered rate limiting using `express-rate-limit`:
@@ -117,4 +121,4 @@ For a 24/7 automated platform, silent failures are unacceptable.
 
 ---
 
-*Document maintained by the NeuraWealth OS Architecture Team.*
+_Document maintained by the NeuraWealth OS Architecture Team._
