@@ -17,7 +17,7 @@ Stripe Dashboard Setup:
                     invoice.payment_failed
   4. Copy the signing secret → set as STRIPE_WEBHOOK_SECRET env var
 
-Created by Charley for Angie
+NeuraWealth OS
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ UPGRADE_MESSAGES = {
         "  📈 Signal accuracy tracking & proof\n\n"
         "Get your first signals now → /signals\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     ),
     "enterprise": (
         "🎉 <b>Payment Successful — Welcome to Enterprise!</b>\n"
@@ -71,7 +71,7 @@ UPGRADE_MESSAGES = {
         "  💬 Direct support channel\n\n"
         "Get your first signals now → /signals\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     ),
 }
 
@@ -83,7 +83,7 @@ DOWNGRADE_MESSAGE = (
     "You can resubscribe at any time → /subscribe\n\n"
     "Thank you for using NeuraWealth OS!\n\n"
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-    "<i>Created by Charley for Angie</i>"
+    "<i>NeuraWealth OS</i>"
 )
 
 PAYMENT_FAILED_MESSAGE = (
@@ -94,7 +94,7 @@ PAYMENT_FAILED_MESSAGE = (
     "To avoid service interruption, please update your payment\n"
     "method in the Stripe customer portal.\n\n"
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-    "<i>Created by Charley for Angie</i>"
+    "<i>NeuraWealth OS</i>"
 )
 
 

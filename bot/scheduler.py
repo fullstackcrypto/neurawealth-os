@@ -66,7 +66,7 @@ WELCOME_MESSAGES = [
         "⚡ <b>Auto-Delivery</b> — Signals sent every 4 hours\n\n"
         "Ready to upgrade? → /subscribe\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     ),
 ]
 
@@ -299,7 +299,7 @@ async def check_expired_trials(context: ContextTypes.DEFAULT_TYPE) -> None:
             "🏢 <b>Enterprise — $149/mo</b>\n\n"
             "→ /subscribe to continue\n\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "<i>Created by Charley for Angie</i>"
+            "<i>NeuraWealth OS</i>"
         )
         try:
             await context.bot.send_message(

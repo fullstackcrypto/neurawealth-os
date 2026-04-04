@@ -8,7 +8,7 @@ free trials, and automated delivery.
 Usage:
     TELEGRAM_BOT_TOKEN=xxx python bot.py
 
-Created by Charley for Angie
+NeuraWealth OS
 """
 
 from __future__ import annotations
@@ -181,7 +181,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "  /refer — Earn free Premium days\n"
         "  /help — Full command list\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     )
 
     await update.effective_message.reply_text(
@@ -231,7 +231,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"🎁 New users get {FREE_TRIAL_DAYS} days free Premium!\n"
         "⭐ Upgrade: /subscribe\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     )
 
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -426,7 +426,7 @@ async def cmd_accuracy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "predicted direction within 24 hours.\n\n"
         "📊 /signals — Get live signals\n"
         "📋 /performance — Full performance dashboard\n\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     )
 
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -502,7 +502,7 @@ async def cmd_performance(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         "📊 /signals — Get live signals\n"
         "📈 /accuracy — Quick accuracy view\n\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     )
 
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -535,7 +535,7 @@ async def cmd_refer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         "📤 Share the link above with friends!\n"
         "They join → you both get Premium access.\n\n"
-        "<i>Created by Charley for Angie</i>"
+        "<i>NeuraWealth OS</i>"
     )
 
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)

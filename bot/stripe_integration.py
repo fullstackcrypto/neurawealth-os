@@ -15,7 +15,7 @@ Webhook Setup:
   - Set the endpoint URL in Stripe Dashboard → Developers → Webhooks.
   - Copy the signing secret into STRIPE_WEBHOOK_SECRET env variable.
 
-Created by Charley for Angie
+NeuraWealth OS
 """
 
 from __future__ import annotations
