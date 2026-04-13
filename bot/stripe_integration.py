@@ -130,17 +130,11 @@ def construct_webhook_event(payload: bytes, sig_header: str) -> Optional[stripe.
     Returns the Event object, or None if verification fails.
     """
     if not STRIPE_WEBHOOK_SECRET:
-        logger.warning(
-            "STRIPE_WEBHOOK_SECRET not set — skipping signature verification"
+        logger.error(
+            "STRIPE_WEBHOOK_SECRET not set — rejecting webhook for security. "
+            "Set STRIPE_WEBHOOK_SECRET in your environment variables."
         )
-        try:
-            import json
-            return stripe.Event.construct_from(
-                json.loads(payload), stripe.api_key
-            )
-        except Exception as exc:
-            logger.error("Failed to parse webhook payload: %s", exc)
-            return None
+        return None
 
     try:
         event = stripe.Webhook.construct_event(
