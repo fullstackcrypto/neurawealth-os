@@ -40,8 +40,8 @@ const recentActivity = [
 
 const miniChartData = Array.from({ length: 24 }, (_, i) => ({
   hour: i,
-  signals: Math.floor(80 + Math.random() * 40),
-  revenue: Math.floor(800 + Math.random() * 400),
+  signals: 80 + ((i * 17 + 7) % 40),
+  revenue: 800 + ((i * 173 + 31) % 400),
 }));
 
 function StatCard({

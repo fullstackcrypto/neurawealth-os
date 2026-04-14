@@ -197,7 +197,7 @@ export default function Signals() {
         Array.from({ length: 168 }, (_, i) => {
           const base = coin.current_price;
           return (
-            base * (1 + Math.sin(i / 10) * 0.05 + (Math.random() - 0.5) * 0.02)
+            base * (1 + Math.sin(i / 10) * 0.05 + Math.sin(i * 2.1) * 0.01)
           );
         });
       const techSignal = generateSignal(prices, coin.current_price);
