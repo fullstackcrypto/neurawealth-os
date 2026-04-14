@@ -1,6 +1,7 @@
 # NeuraWealth OS — Fly.io Configuration
 # Deploy: fly launch --copy-config --yes
 
+# Change this to a unique name for your deployment (e.g., "neurawealth-os-yourname")
 app = "neurawealth-os"
 primary_region = "iad"
 kill_signal = "SIGINT"
