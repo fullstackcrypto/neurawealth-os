@@ -119,3 +119,5 @@ bot/__pycache__/
 bot/*.db
 bot/.env
 
+ci_fix_notes.txt
+serve.js
