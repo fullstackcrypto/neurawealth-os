@@ -1,0 +1,49 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs (rebuilt inside container)
+dist
+build
+
+# Environment files (injected at runtime)
+.env
+.env.*
+!.env.example
+
+# Version control
+.git
+.gitignore
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CI/CD and docs (not needed in image)
+.github
+marketing
+*.md
+!README.md
+LICENSE
+
+# Bot (separate container)
+bot
+
+# Logs and temp files
+*.log
+.manus-logs
+tmp
+temp
+coverage
+.nyc_output
+
+# Debug / development artifacts
+.webdev
+ci_fix_notes.txt
+serve.js

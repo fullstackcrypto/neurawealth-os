@@ -1,0 +1,23 @@
+# NeuraWealth OS — Render Blueprint
+# One-click deploy: https://render.com/deploy?repo=https://github.com/fullstackcrypto/neurawealth-os
+
+services:
+  - type: web
+    name: neurawealth-os
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: VITE_COINGECKO_API_KEY
+        sync: false
+      - key: VITE_TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: VITE_ANALYTICS_ENDPOINT
+        sync: false
+      - key: VITE_ANALYTICS_WEBSITE_ID
+        sync: false

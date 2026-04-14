@@ -6,6 +6,13 @@
 [![CodeQL](https://github.com/fullstackcrypto/neurawealth-os/actions/workflows/codeql.yml/badge.svg)](https://github.com/fullstackcrypto/neurawealth-os/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+### One-Click Deploy
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/neurawealth-os?referralCode=neurawealth)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/fullstackcrypto/neurawealth-os)
+
+> **New here?** See the full [Deployment Guide](DEPLOY.md) for Docker, Fly.io, Vercel, and more.
+
 ---
 
 ## Table of Contents
@@ -13,6 +20,7 @@
 - [Overview](#overview)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [Quick Deploy](#quick-deploy)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
@@ -56,6 +64,24 @@ NeuraWealth OS is a production-grade Progressive Web Application (PWA) designed 
 | **Build / Bundle**  | Vite (client) + esbuild (server)              |
 | **Package Manager** | pnpm 10                                       |
 | **Type Safety**     | TypeScript 5 (strict mode)                    |
+
+---
+
+## Quick Deploy
+
+The fastest way to get NeuraWealth OS running — no local setup required:
+
+```bash
+# Option 1: Docker (one command)
+git clone https://github.com/fullstackcrypto/neurawealth-os.git
+cd neurawealth-os && cp .env.example .env
+docker compose up -d
+
+# Option 2: Railway / Render (zero commands)
+# Click a deploy button above — done.
+```
+
+For detailed instructions (Fly.io, Vercel + Railway split, manual VPS, PM2), see **[DEPLOY.md](DEPLOY.md)**.
 
 ---
 
