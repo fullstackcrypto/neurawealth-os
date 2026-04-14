@@ -3,7 +3,12 @@
  * Calculates RSI, EMA, MACD, and AI confidence scores
  */
 
+function sanitizePrices(prices: number[]): number[] {
+  return prices.filter(p => Number.isFinite(p) && p > 0);
+}
+
 export function calculateEMA(prices: number[], period: number): number[] {
+  if (prices.length === 0) return [];
   const ema: number[] = [];
   const multiplier = 2 / (period + 1);
   ema[0] = prices[0];
@@ -72,18 +77,21 @@ export function generateSignal(
   prices: number[],
   currentPrice: number
 ): TechnicalSignal {
-  const rsi = calculateRSI(prices);
-  const ema9 = calculateEMA(prices, 9);
-  const ema21 = calculateEMA(prices, 21);
-  const ema9Current = ema9[ema9.length - 1];
-  const ema21Current = ema21[ema21.length - 1];
+  const clean = sanitizePrices(prices);
+  const rsi = calculateRSI(clean);
+  const ema9 = calculateEMA(clean, 9);
+  const ema21 = calculateEMA(clean, 21);
+  const ema9Current =
+    ema9.length > 0 ? (ema9[ema9.length - 1] ?? currentPrice) : currentPrice;
+  const ema21Current =
+    ema21.length > 0 ? (ema21[ema21.length - 1] ?? currentPrice) : currentPrice;
   const emaCrossover =
     ema9Current > ema21Current * 1.002
       ? "BULLISH"
       : ema9Current < ema21Current * 0.998
         ? "BEARISH"
         : "NEUTRAL";
-  const macd = calculateMACD(prices);
+  const macd = calculateMACD(clean);
 
   // AI Confidence Score based on indicator confluence
   let score = 50;
