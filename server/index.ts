@@ -67,6 +67,16 @@ app.use(express.json({ limit: "10kb" }));
 
 // ── Telegram proxy endpoint ───────────────────────────────────────────────────
 app.post("/api/telegram/send", async (req, res) => {
+  // Auth gate: require shared secret so only our frontend can use the proxy
+  const proxySecret = process.env.TELEGRAM_PROXY_SECRET;
+  if (!proxySecret) {
+    return res.status(503).json({ error: "Telegram proxy not configured" });
+  }
+  const clientSecret = req.headers["x-telegram-secret"];
+  if (clientSecret !== proxySecret) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
     return res.status(500).json({ error: "Bot token not configured" });
