@@ -210,4 +210,37 @@ describe("generateSignal", () => {
     const { emaCrossover } = generateSignal(prices, prices[prices.length - 1]);
     expect(emaCrossover).toBe("BULLISH");
   });
+
+  it("callers can handle invalid data without crashing by wrapping in try/catch", () => {
+    // Simulate a caller (like Signals.tsx) that wraps generateSignal in try/catch
+    // and returns a safe default on failure.
+    const invalidInputs: Array<[number[], number]> = [
+      [[NaN, NaN, NaN], 100],
+      [[Infinity, 100, 100], 100],
+      [[-1, 0, 1], 1],
+      [Array.from({ length: 5 }, () => 100), 100], // too few points
+    ];
+
+    for (const [prices, currentPrice] of invalidInputs) {
+      let techSignal: ReturnType<typeof generateSignal>;
+      try {
+        techSignal = generateSignal(prices, currentPrice);
+      } catch {
+        techSignal = {
+          rsi: 50,
+          ema9: currentPrice,
+          ema21: currentPrice,
+          emaCrossover: "NEUTRAL" as const,
+          macd: { macd: 0, signal: 0, histogram: 0 },
+          aiConfidence: 50,
+          signal: "HOLD" as const,
+        };
+      }
+      expect(techSignal.signal).toBe("HOLD");
+      expect(techSignal.rsi).toBe(50);
+      expect(techSignal.aiConfidence).toBe(50);
+      expect(techSignal.ema9).toBe(currentPrice);
+      expect(techSignal.ema21).toBe(currentPrice);
+    }
+  });
 });

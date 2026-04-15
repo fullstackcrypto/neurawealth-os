@@ -200,7 +200,21 @@ export default function Signals() {
             base * (1 + Math.sin(i / 10) * 0.05 + Math.sin(i * 2.1) * 0.01)
           );
         });
-      const techSignal = generateSignal(prices, coin.current_price);
+      let techSignal: TechnicalSignal;
+      try {
+        techSignal = generateSignal(prices, coin.current_price);
+      } catch (err) {
+        console.warn(`generateSignal failed for ${coin.symbol.toUpperCase()}, using safe default:`, err);
+        techSignal = {
+          rsi: 50,
+          ema9: coin.current_price,
+          ema21: coin.current_price,
+          emaCrossover: "NEUTRAL" as const,
+          macd: { macd: 0, signal: 0, histogram: 0 },
+          aiConfidence: 50,
+          signal: "HOLD" as const,
+        };
+      }
       return { ...coin, techSignal };
     });
   }, [coins]);
