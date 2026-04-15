@@ -7,6 +7,9 @@
  * In production, the webhook endpoint (/api/telegram/webhook) would be
  * handled by a backend server. This module provides the formatting
  * functions and command handlers that the backend would use.
+ *
+ * Signals are sent via the backend proxy endpoint (/api/telegram/send)
+ * so that the bot token is never exposed to the client bundle.
  */
 
 export interface TelegramUpdate {
@@ -31,6 +34,28 @@ export interface BotCommand {
   command: string;
   description: string;
   handler: (args: string[]) => string;
+}
+
+/**
+ * Send a message via the backend Telegram proxy.
+ * The bot token never leaves the server — the client only calls this
+ * endpoint, which forwards the request to the Telegram Bot API.
+ */
+export async function sendTelegramSignal(signalData: {
+  chat_id: string | number;
+  text: string;
+  parse_mode?: string;
+}): Promise<{ ok: boolean; description?: string }> {
+  const response = await fetch("/api/telegram/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(signalData),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error ?? "Failed to send signal");
+  }
+  return response.json();
 }
 
 // Format a crypto signal for Telegram (Markdown V2)
