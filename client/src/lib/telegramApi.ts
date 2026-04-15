@@ -4,6 +4,11 @@
  * This module provides the signal formatting and webhook handling logic
  * for the NeuraWealth OS Telegram bot integration.
  *
+ * Signals are sent via the backend proxy endpoint (/api/telegram/send),
+ * which keeps the bot token server-side. The client authenticates with
+ * a shared secret (VITE_TELEGRAM_PROXY_SECRET) via the x-telegram-secret
+ * header.
+ *
  * In production, the webhook endpoint (/api/telegram/webhook) would be
  * handled by a backend server. This module provides the formatting
  * functions and command handlers that the backend would use.
@@ -34,6 +39,35 @@ export interface BotCommand {
 }
 
 // Format a crypto signal for Telegram (Markdown V2)
+export async function sendTelegramSignal(signalData: {
+  chat_id: string | number;
+  text: string;
+  parse_mode?: string;
+}): Promise<{ ok: boolean; description?: string }> {
+  const secret = import.meta.env.VITE_TELEGRAM_PROXY_SECRET;
+  if (!secret) {
+    throw new Error("VITE_TELEGRAM_PROXY_SECRET is not configured");
+  }
+  const response = await fetch("/api/telegram/send", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-telegram-secret": secret,
+    },
+    body: JSON.stringify(signalData),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error ?? "Failed to send signal");
+  }
+  return response.json();
+}
+
+/**
+ * Send a message via the backend Telegram proxy.
+ * The bot token never leaves the server — the client only calls this
+ * endpoint, which forwards the request to the Telegram Bot API.
+ */
 export function formatSignalMessage(
   coinName: string,
   symbol: string,
