@@ -33,6 +33,20 @@ function validateFiniteArray(
   }
 }
 
+/**
+ * Computes the final EMA value for an array of signed numbers (e.g. MACD line).
+ * Unlike calculateEMA, this does not require positive values and returns a
+ * scalar rather than the full series.
+ */
+function computeSignedEMAValue(values: number[], period: number): number {
+  const multiplier = 2 / (period + 1);
+  let ema = values[0];
+  for (let i = 1; i < values.length; i++) {
+    ema = (values[i] - ema) * multiplier + ema;
+  }
+  return ema;
+}
+
 export function calculateEMA(prices: number[], period: number): number[] {
   validatePrices(prices, 1, "calculateEMA");
   const ema: number[] = [];
@@ -82,14 +96,9 @@ export function calculateMACD(prices: number[]): {
   const ema26 = calculateEMA(prices, 26);
   const macdLine: number[] = ema12.map((v, i) => v - ema26[i]);
   validateFiniteArray(macdLine, 9, "calculateMACD");
-  // Compute signal line inline — MACD values can be negative, so we cannot
-  // pass them through calculateEMA which validates for positive prices.
-  const macdSlice = macdLine.slice(-9);
-  const sigMultiplier = 2 / (9 + 1);
-  let signalValue = macdSlice[0];
-  for (let i = 1; i < macdSlice.length; i++) {
-    signalValue = (macdSlice[i] - signalValue) * sigMultiplier + signalValue;
-  }
+  // Use computeSignedEMAValue for the signal line — MACD values can be
+  // negative, so they cannot go through calculateEMA which requires positive prices.
+  const signalValue = computeSignedEMAValue(macdLine.slice(-9), 9);
   const macd = macdLine[macdLine.length - 1];
   return { macd, signal: signalValue, histogram: macd - signalValue };
 }

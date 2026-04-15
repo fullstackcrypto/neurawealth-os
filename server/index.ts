@@ -72,18 +72,29 @@ app.post("/api/telegram/send", async (req, res) => {
     return res.status(500).json({ error: "Bot token not configured" });
   }
 
-  const { chat_id, text, parse_mode } = req.body as {
-    chat_id?: unknown;
-    text?: unknown;
-    parse_mode?: unknown;
-  };
-  if (!chat_id || !text) {
-    return res.status(400).json({ error: "chat_id and text are required" });
+  const body = req.body as Record<string, unknown>;
+  const chat_id = body.chat_id;
+  const text = body.text;
+  const parse_mode = body.parse_mode;
+
+  if (
+    chat_id === undefined ||
+    chat_id === null ||
+    text === undefined ||
+    text === null ||
+    typeof text !== "string" ||
+    (typeof chat_id !== "string" && typeof chat_id !== "number")
+  ) {
+    return res
+      .status(400)
+      .json({ error: "chat_id (string|number) and text (string) are required" });
   }
 
   const allowedParseModes = ["Markdown", "MarkdownV2", "HTML"];
   const safeParseMode =
-    allowedParseModes.includes(String(parse_mode)) ? String(parse_mode) : "Markdown";
+    typeof parse_mode === "string" && allowedParseModes.includes(parse_mode)
+      ? parse_mode
+      : "Markdown";
 
   try {
     const tgRes = await fetch(
