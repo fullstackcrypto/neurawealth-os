@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   # ─── Type-check ──────────────────────────────────────────────────────────────
-typecheck:
+  typecheck:
     name: TypeScript type-check
     runs-on: ubuntu-latest
     permissions:
@@ -34,7 +34,7 @@ typecheck:
         run: pnpm check
 
   # ─── Format check ───────────────────────────────────────────────────────────
-format:
+  format:
     name: Prettier format check
     runs-on: ubuntu-latest
     permissions:
@@ -56,7 +56,7 @@ format:
         run: pnpm prettier --check .
 
   # ─── Unit tests ──────────────────────────────────────────────────────────────
-test:
+  test:
     name: Unit tests
     runs-on: ubuntu-latest
     permissions:
@@ -79,7 +79,7 @@ test:
         run: pnpm test
 
   # ─── Build ──────────────────────────────────────────────────────────────────
-build:
+  build:
     name: Production build
     runs-on: ubuntu-latest
     permissions:
@@ -113,7 +113,7 @@ build:
           retention-days: 7
 
   # ─── Dependency audit ────────────────────────────────────────────────────────
-audit:
+  audit:
     name: Security audit
     runs-on: ubuntu-latest
     permissions:
