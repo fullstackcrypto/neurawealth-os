@@ -1,6 +1,6 @@
 /* AppLayout — Quantum Noir Dashboard: persistent sidebar nav + top ticker bar */
 import { Link, useLocation } from "wouter";
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   Activity,
@@ -14,6 +14,7 @@ import {
   X,
   ChevronLeft,
 } from "lucide-react";
+import { useCoinGecko } from "@/hooks/useCoinGecko";
 
 const NAV_ITEMS = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,60 +27,8 @@ const NAV_ITEMS = [
   { path: "/pipeline", label: "Pipeline", icon: GitBranch },
 ];
 
-interface TickerCoin {
-  id: string;
-  symbol: string;
-  current_price: number;
-  price_change_percentage_24h: number;
-}
-
 function MarketTicker() {
-  const [coins, setCoins] = useState<TickerCoin[]>([]);
-
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const res = await fetch(
-          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=8&page=1&sparkline=false"
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setCoins(data);
-        }
-      } catch {
-        // Use fallback data
-        setCoins([
-          {
-            id: "bitcoin",
-            symbol: "btc",
-            current_price: 84521,
-            price_change_percentage_24h: 2.4,
-          },
-          {
-            id: "ethereum",
-            symbol: "eth",
-            current_price: 1893,
-            price_change_percentage_24h: -1.2,
-          },
-          {
-            id: "solana",
-            symbol: "sol",
-            current_price: 125.8,
-            price_change_percentage_24h: 5.1,
-          },
-          {
-            id: "binancecoin",
-            symbol: "bnb",
-            current_price: 612,
-            price_change_percentage_24h: 0.8,
-          },
-        ]);
-      }
-    };
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  const { coins } = useCoinGecko(8);
 
   if (coins.length === 0) return null;
 

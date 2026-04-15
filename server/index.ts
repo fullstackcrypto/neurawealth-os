@@ -18,40 +18,113 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          "https://api.coingecko.com",
+          "https://api.telegram.org",
+        ],
+        scriptSrc: [
+          "'self'",
+          ...(process.env.ANALYTICS_ENDPOINT
+            ? [process.env.ANALYTICS_ENDPOINT]
+            : []),
+        ],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://api.coingecko.com"],
-        fontSrc: ["'self'", "https:", "data:"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://coin-images.coingecko.com",
+          "https://assets.coingecko.com",
+        ],
+        fontSrc: ["'self'", "data:"],
+        frameSrc: ["'none'"],
         objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
       },
     },
   })
 );
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limiter);
 
-// ── Parse JSON bodies ─────────────────────────────────────────────────────────
-app.use(express.json());
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-// ── Serve static build output ─────────────────────────────────────────────────
-const distDir = path.resolve(__dirname, "public");
-app.use(express.static(distDir));
+app.use(generalLimiter);
+app.use("/api/", apiLimiter);
 
-// ── SPA fallback — serve index.html for all non-API routes ───────────────────
+// ── Body parsing ──────────────────────────────────────────────────────────────
+app.use(express.json({ limit: "10kb" }));
+
+// ── Telegram proxy endpoint ───────────────────────────────────────────────────
+app.post("/api/telegram/send", async (req, res) => {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    return res.status(500).json({ error: "Bot token not configured" });
+  }
+
+  const { chat_id, text, parse_mode } = req.body as {
+    chat_id?: unknown;
+    text?: unknown;
+    parse_mode?: unknown;
+  };
+  if (!chat_id || !text) {
+    return res.status(400).json({ error: "chat_id and text are required" });
+  }
+
+  const allowedParseModes = ["Markdown", "MarkdownV2", "HTML"];
+  const safeParseMode =
+    allowedParseModes.includes(String(parse_mode)) ? String(parse_mode) : "Markdown";
+
+  try {
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id, text, parse_mode: safeParseMode }),
+      }
+    );
+    const data = (await tgRes.json()) as { ok: boolean; result?: unknown };
+    if (!data.ok) {
+      return res.status(502).json({ error: "Telegram API error", detail: data });
+    }
+    res.json({ ok: true, result: data.result });
+  } catch {
+    res.status(500).json({ error: "Failed to reach Telegram API" });
+  }
+});
+
+// ── Telegram webhook endpoint ─────────────────────────────────────────────────
+app.post("/api/telegram/webhook", (_req, res) => {
+  // Webhook handler stub — extend when Python bot is moved server-side
+  res.sendStatus(200);
+});
+
+// ── Static files (production build) ──────────────────────────────────────────
+const distPath = path.resolve(__dirname, "public");
+app.use(express.static(distPath, { dotfiles: "deny" }));
+
+// ── SPA fallback ──────────────────────────────────────────────────────────────
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(distDir, "index.html"));
+  const resolvedBase = path.resolve(distPath);
+  const resolvedIndex = path.resolve(distPath, "index.html");
+  if (!resolvedIndex.startsWith(resolvedBase + path.sep)) {
+    return res.status(403).end();
+  }
+  res.sendFile(resolvedIndex);
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`[NeuraWealth OS] Server running on port ${PORT}`);
 });
