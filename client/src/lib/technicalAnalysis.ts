@@ -1,9 +1,54 @@
 /**
  * Technical Analysis Engine
- * Calculates RSI, EMA, MACD, and AI confidence scores
+ * Calculates RSI, EMA, MACD, and confluence scores
  */
 
+function validatePrices(
+  prices: number[],
+  minLength: number,
+  fnName: string
+): void {
+  if (!Array.isArray(prices) || prices.length < minLength) {
+    throw new Error(
+      `${fnName}: requires at least ${minLength} data points, got ${prices?.length ?? 0}`
+    );
+  }
+  if (prices.some(p => !isFinite(p) || p <= 0)) {
+    throw new Error(
+      `${fnName}: price array contains invalid values (NaN, Infinity, or non-positive)`
+    );
+  }
+}
+
+function validateFiniteArray(
+  arr: number[],
+  minLength: number,
+  fnName: string
+): void {
+  if (!Array.isArray(arr) || arr.length < minLength) {
+    throw new Error(`${fnName}: requires at least ${minLength} data points`);
+  }
+  if (arr.some(v => !isFinite(v))) {
+    throw new Error(`${fnName}: array contains NaN or Infinity`);
+  }
+}
+
+/**
+ * Computes the final EMA value for an array of signed numbers (e.g. MACD line).
+ * Unlike calculateEMA, this does not require positive values and returns a
+ * scalar rather than the full series.
+ */
+function computeSignedEMAValue(values: number[], period: number): number {
+  const multiplier = 2 / (period + 1);
+  let ema = values[0];
+  for (let i = 1; i < values.length; i++) {
+    ema = (values[i] - ema) * multiplier + ema;
+  }
+  return ema;
+}
+
 export function calculateEMA(prices: number[], period: number): number[] {
+  validatePrices(prices, 1, "calculateEMA");
   const ema: number[] = [];
   const multiplier = 2 / (period + 1);
   ema[0] = prices[0];
@@ -14,7 +59,7 @@ export function calculateEMA(prices: number[], period: number): number[] {
 }
 
 export function calculateRSI(prices: number[], period = 14): number {
-  if (prices.length < period + 1) return 50;
+  validatePrices(prices, period + 1, "calculateRSI");
   const changes: number[] = [];
   for (let i = 1; i < prices.length; i++) {
     changes.push(prices[i] - prices[i - 1]);
@@ -46,14 +91,16 @@ export function calculateMACD(prices: number[]): {
   signal: number;
   histogram: number;
 } {
-  if (prices.length < 26) return { macd: 0, signal: 0, histogram: 0 };
+  validatePrices(prices, 26, "calculateMACD");
   const ema12 = calculateEMA(prices, 12);
   const ema26 = calculateEMA(prices, 26);
   const macdLine: number[] = ema12.map((v, i) => v - ema26[i]);
-  const signalLine = calculateEMA(macdLine.slice(-9), 9);
+  validateFiniteArray(macdLine, 9, "calculateMACD");
+  // Use computeSignedEMAValue for the signal line — MACD values can be
+  // negative, so they cannot go through calculateEMA which requires positive prices.
+  const signalValue = computeSignedEMAValue(macdLine.slice(-9), 9);
   const macd = macdLine[macdLine.length - 1];
-  const signal = signalLine[signalLine.length - 1];
-  return { macd, signal, histogram: macd - signal };
+  return { macd, signal: signalValue, histogram: macd - signalValue };
 }
 
 export type SignalType = "BUY" | "SELL" | "HOLD";
@@ -64,7 +111,7 @@ export interface TechnicalSignal {
   ema21: number;
   emaCrossover: "BULLISH" | "BEARISH" | "NEUTRAL";
   macd: { macd: number; signal: number; histogram: number };
-  aiConfidence: number;
+  confluenceScore: number;
   signal: SignalType;
 }
 
@@ -85,7 +132,7 @@ export function generateSignal(
         : "NEUTRAL";
   const macd = calculateMACD(prices);
 
-  // AI Confidence Score based on indicator confluence
+  // Confluence Score based on indicator confluence
   let score = 50;
   // RSI contribution
   if (rsi < 30)
@@ -107,10 +154,10 @@ export function generateSignal(
   if (currentPrice > ema21Current) score += 5;
   else score -= 5;
 
-  const aiConfidence = Math.max(0, Math.min(100, score));
+  const confluenceScore = Math.max(0, Math.min(100, score));
   let signal: SignalType = "HOLD";
-  if (aiConfidence >= 65) signal = "BUY";
-  else if (aiConfidence <= 35) signal = "SELL";
+  if (confluenceScore >= 65) signal = "BUY";
+  else if (confluenceScore <= 35) signal = "SELL";
 
   return {
     rsi,
@@ -118,7 +165,7 @@ export function generateSignal(
     ema21: ema21Current,
     emaCrossover,
     macd,
-    aiConfidence,
+    confluenceScore,
     signal,
   };
 }
@@ -139,7 +186,7 @@ export function formatTelegramSignal(
 
 💰 Price: $${price.toLocaleString(undefined, { maximumFractionDigits: 6 })}
 📊 Signal: *${techSignal.signal}*
-🤖 AI Confidence: ${techSignal.aiConfidence}%
+🤖 Confluence Score: ${techSignal.confluenceScore}%
 
 📈 RSI(14): ${techSignal.rsi.toFixed(1)}
 📉 EMA 9/21: ${techSignal.emaCrossover}

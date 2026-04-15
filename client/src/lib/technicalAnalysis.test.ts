@@ -9,21 +9,25 @@ import {
 } from "./technicalAnalysis";
 
 describe("technical analysis helpers", () => {
-  it("returns safe defaults for empty inputs", () => {
-    expect(calculateEMA([], 9)).toEqual([]);
-    expect(calculateRSI([], 14)).toBe(50);
-    expect(calculateMACD([])).toEqual({ macd: 0, signal: 0, histogram: 0 });
+  it("throws for empty or insufficient inputs", () => {
+    expect(() => calculateEMA([], 9)).toThrow(
+      "calculateEMA: requires at least 1 data points"
+    );
+    expect(() => calculateRSI([], 14)).toThrow(
+      "calculateRSI: requires at least 15 data points"
+    );
+    expect(() => calculateMACD([])).toThrow(
+      "calculateMACD: requires at least 26 data points"
+    );
   });
 
-  it("ignores invalid prices instead of returning NaN", () => {
-    const signal = generateSignal([100, 101, Number.NaN, Infinity, 102, 103], 103);
-
-    expect(Number.isFinite(signal.rsi)).toBe(true);
-    expect(Number.isFinite(signal.ema9)).toBe(true);
-    expect(Number.isFinite(signal.ema21)).toBe(true);
-    expect(Number.isFinite(signal.macd.macd)).toBe(true);
-    expect(Number.isFinite(signal.macd.signal)).toBe(true);
-    expect(Number.isFinite(signal.macd.histogram)).toBe(true);
+  it("throws for invalid (NaN / Infinity / non-positive) prices", () => {
+    const validBase = Array.from({ length: 30 }, (_, i) => 100 + i);
+    const withNaN = [...validBase];
+    withNaN[5] = Number.NaN;
+    expect(() => generateSignal(withNaN, 129)).toThrow(
+      "price array contains invalid values"
+    );
   });
 
   it("produces a buy leaning signal for a strong uptrend", () => {
@@ -31,7 +35,7 @@ describe("technical analysis helpers", () => {
     const signal = generateSignal(prices, prices[prices.length - 1]);
 
     expect(["BUY", "HOLD"]).toContain(signal.signal);
-    expect(signal.aiConfidence).toBeGreaterThanOrEqual(50);
+    expect(signal.confluenceScore).toBeGreaterThanOrEqual(50);
   });
 
   it("formats telegram output with the expected markers", () => {
@@ -41,12 +45,12 @@ describe("technical analysis helpers", () => {
       ema21: 83000,
       emaCrossover: "BULLISH",
       macd: { macd: 10, signal: 5, histogram: 5 },
-      aiConfidence: 76,
+      confluenceScore: 76,
       signal: "BUY",
     });
 
     expect(message).toContain("Bitcoin (BTC)");
-    expect(message).toContain("AI Confidence: 76%");
+    expect(message).toContain("Confluence Score: 76%");
     expect(message).toContain("Signal: *BUY*");
   });
 });

@@ -168,7 +168,7 @@ function CoinSignalRow({
         </span>
       </td>
       <td className="py-3 px-3 hidden sm:table-cell">
-        <ConfidenceBar value={coin.techSignal.aiConfidence} />
+        <ConfidenceBar value={coin.techSignal.confluenceScore} />
       </td>
       <td className="py-3 px-3">
         <SignalBadge signal={coin.techSignal.signal} />
@@ -196,12 +196,23 @@ export default function Signals() {
         coin.sparkline_in_7d?.price ||
         Array.from({ length: 168 }, (_, i) => {
           const base = coin.current_price;
-          return (
-            base * (1 + Math.sin(i / 10) * 0.05 + Math.sin(i * 2.1) * 0.01)
-          );
+          return base * (1 + Math.sin(i / 10) * 0.05 + Math.sin(i / 3) * 0.01);
         });
-      const techSignal = generateSignal(prices, coin.current_price);
-      return { ...coin, techSignal };
+      try {
+        const techSignal = generateSignal(prices, coin.current_price);
+        return { ...coin, techSignal };
+      } catch {
+        const fallbackSignal: TechnicalSignal = {
+          rsi: 50,
+          ema9: coin.current_price,
+          ema21: coin.current_price,
+          emaCrossover: "NEUTRAL",
+          macd: { macd: 0, signal: 0, histogram: 0 },
+          confluenceScore: 50,
+          signal: "HOLD",
+        };
+        return { ...coin, techSignal: fallbackSignal };
+      }
     });
   }, [coins]);
 

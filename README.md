@@ -63,7 +63,7 @@ NeuraWealth OS is a production-grade Progressive Web Application (PWA) designed 
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v20 or later
+- [Node.js](https://nodejs.org/) v22 or later
 - [pnpm](https://pnpm.io/) v10 (`npm install -g pnpm@10`)
 
 ### Installation
@@ -99,17 +99,18 @@ pnpm start      # Start production server on PORT (default 3000)
 
 Copy `.env.example` to `.env` and fill in the values. **Never commit `.env` to version control.**
 
-| Variable                    | Required | Description                                      |
-| --------------------------- | -------- | ------------------------------------------------ |
-| `PORT`                      | No       | HTTP server port (default: `3000`)               |
-| `NODE_ENV`                  | No       | `development` or `production`                    |
-| `VITE_ANALYTICS_ENDPOINT`   | No       | Umami analytics base URL                         |
-| `VITE_ANALYTICS_WEBSITE_ID` | No       | Umami website ID                                 |
-| `VITE_COINGECKO_API_KEY`    | No       | CoinGecko Pro API key (increases rate limits)    |
-| `VITE_TELEGRAM_BOT_TOKEN`   | No       | Telegram Bot token from @BotFather               |
-| `VITE_GOOGLE_MAPS_API_KEY`  | No       | Google Maps JavaScript API key (for Map feature) |
+| Variable                    | Side   | Required | Description                                               |
+| --------------------------- | ------ | -------- | --------------------------------------------------------- |
+| `PORT`                      | Server | No       | HTTP server port (default: `3000`)                        |
+| `TELEGRAM_BOT_TOKEN`        | Server | No       | Telegram Bot token from @BotFather — **never** use `VITE_` prefix |
+| `ANALYTICS_ENDPOINT`        | Server | No       | Umami analytics script URL                                |
+| `VITE_COINGECKO_API_KEY`    | Client | No       | CoinGecko Pro API key (increases rate limits)             |
+| `VITE_FRONTEND_FORGE_API_KEY` | Client | No     | Frontend Forge integration key                            |
+| `VITE_FRONTEND_FORGE_API_URL` | Client | No     | Frontend Forge API URL                                    |
+| `VITE_OAUTH_PORTAL_URL`     | Client | No       | OAuth portal URL (only if using auth)                     |
+| `VITE_APP_ID`               | Client | No       | Application ID (only if using auth)                       |
 
-> **Security note:** Variables prefixed with `VITE_` are embedded into the client bundle and are publicly visible. Never store private keys or secrets in `VITE_` variables.
+> **Security note:** Variables prefixed with `VITE_` are embedded into the client bundle and are publicly visible. Never store private keys or secrets in `VITE_` variables. The Telegram bot token **must** use the server-side `TELEGRAM_BOT_TOKEN` variable.
 
 ---
 
