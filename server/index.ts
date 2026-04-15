@@ -13,79 +13,139 @@ app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 // ── Security headers ─────────────────────────────────────────────────────────
-const analyticsEndpoint = process.env.ANALYTICS_ENDPOINT;
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          ...(analyticsEndpoint ? [analyticsEndpoint] : []),
-        ],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:"],
         connectSrc: [
           "'self'",
           "https://api.coingecko.com",
           "https://api.telegram.org",
         ],
-        fontSrc: ["'self'", "https:", "data:"],
+        scriptSrc: [
+          "'self'",
+          ...(process.env.ANALYTICS_ENDPOINT
+            ? [process.env.ANALYTICS_ENDPOINT]
+            : []),
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://coin-images.coingecko.com",
+          "https://assets.coingecko.com",
+        ],
+        fontSrc: ["'self'", "data:"],
+        frameSrc: ["'none'"],
         objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
       },
     },
   })
 );
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limiter);
 
-// ── Parse JSON bodies ─────────────────────────────────────────────────────────
-app.use(express.json({ limit: "64kb" }));
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-// ── Telegram send proxy ───────────────────────────────────────────────────────
-// Keeps TELEGRAM_BOT_TOKEN server-side — never exposed to the client bundle.
+app.use(generalLimiter);
+app.use("/api/", apiLimiter);
+
+// ── Body parsing ──────────────────────────────────────────────────────────────
+app.use(express.json({ limit: "10kb" }));
+
+// ── Telegram proxy endpoint ───────────────────────────────────────────────────
 app.post("/api/telegram/send", async (req, res) => {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
-    res.status(503).json({ error: "Telegram bot not configured" });
-    return;
+  // Auth gate: require shared secret so only our frontend can use the proxy
+  const proxySecret = process.env.TELEGRAM_PROXY_SECRET;
+  if (!proxySecret) {
+    return res.status(503).json({ error: "Telegram proxy not configured" });
+  }
+  const clientSecret = req.headers["x-telegram-secret"];
+  if (clientSecret !== proxySecret) {
+    return res.status(403).json({ error: "Forbidden" });
   }
 
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    return res.status(500).json({ error: "Bot token not configured" });
+  }
+
+  const body = req.body as Record<string, unknown>;
+  const chat_id = body.chat_id;
+  const text = body.text;
+  const parse_mode = body.parse_mode;
+
+  if (
+    chat_id === undefined ||
+    chat_id === null ||
+    text === undefined ||
+    text === null ||
+    typeof text !== "string" ||
+    (typeof chat_id !== "string" && typeof chat_id !== "number")
+  ) {
+    return res
+      .status(400)
+      .json({ error: "chat_id (string|number) and text (string) are required" });
+  }
+
+  const allowedParseModes = ["Markdown", "MarkdownV2", "HTML"];
+  const safeParseMode =
+    typeof parse_mode === "string" && allowedParseModes.includes(parse_mode)
+      ? parse_mode
+      : "Markdown";
+
   try {
-    const telegramRes = await fetch(
+    const tgRes = await fetch(
       `https://api.telegram.org/bot${token}/sendMessage`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(req.body),
+        body: JSON.stringify({ chat_id, text, parse_mode: safeParseMode }),
       }
     );
-    const data = await telegramRes.json();
-    res.status(telegramRes.status).json(data);
-  } catch (err) {
-    console.error("Telegram API error:", err);
-    res.status(502).json({ error: "Telegram API unreachable" });
+    const data = (await tgRes.json()) as { ok: boolean; result?: unknown };
+    if (!data.ok) {
+      return res.status(502).json({ error: "Telegram API error", detail: data });
+    }
+    res.json({ ok: true, result: data.result });
+  } catch {
+    res.status(500).json({ error: "Failed to reach Telegram API" });
   }
 });
 
-// ── Serve static build output ─────────────────────────────────────────────────
-const distDir = path.resolve(__dirname, "public");
-app.use(express.static(distDir, { dotfiles: "deny" }));
+// ── Telegram webhook endpoint ─────────────────────────────────────────────────
+app.post("/api/telegram/webhook", (_req, res) => {
+  // Webhook handler stub — extend when Python bot is moved server-side
+  res.sendStatus(200);
+});
 
-// ── SPA fallback — serve index.html for all non-API routes ───────────────────
+// ── Static files (production build) ──────────────────────────────────────────
+const distPath = path.resolve(__dirname, "public");
+app.use(express.static(distPath, { dotfiles: "deny" }));
+
+// ── SPA fallback ──────────────────────────────────────────────────────────────
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(distDir, "index.html"));
+  const resolvedBase = path.resolve(distPath);
+  const resolvedIndex = path.resolve(distPath, "index.html");
+  if (!resolvedIndex.startsWith(resolvedBase + path.sep)) {
+    return res.status(403).end();
+  }
+  res.sendFile(resolvedIndex);
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`[NeuraWealth OS] Server running on port ${PORT}`);
 });

@@ -47,18 +47,18 @@ describe("calculateEMA", () => {
     ema.forEach((v) => expect(v).toBeCloseTo(200, 5));
   });
 
-  it("throws when prices array is shorter than period", () => {
-    expect(() => calculateEMA([100, 200], 9)).toThrow("calculateEMA");
+  it("throws when prices array is empty", () => {
+    expect(() => calculateEMA([], 9)).toThrow("calculateEMA");
   });
 
   it("throws on non-finite price values", () => {
     const prices = [100, NaN, 200, 300, 400, 500, 600, 700, 800, 900];
-    expect(() => calculateEMA(prices, 9)).toThrow("non-finite");
+    expect(() => calculateEMA(prices, 9)).toThrow("invalid values");
   });
 
-  it("does NOT throw on negative values (EMA may be called on MACD line)", () => {
-    const prices = [-50, -40, -30, -20, -10, 0, 10, 20, 30];
-    expect(() => calculateEMA(prices, 9)).not.toThrow();
+  it("throws on negative values (validatePrices requires positive prices)", () => {
+    const prices = [100, -50, 200, 300, 400, 500, 600, 700, 800, 900];
+    expect(() => calculateEMA(prices, 9)).toThrow("invalid values");
   });
 });
 
@@ -107,7 +107,7 @@ describe("calculateRSI", () => {
 
   it("throws on NaN prices", () => {
     const prices = Array.from({ length: 20 }, (_, i) => (i === 5 ? NaN : 100 + i));
-    expect(() => calculateRSI(prices)).toThrow("non-finite");
+    expect(() => calculateRSI(prices)).toThrow("invalid values");
   });
 
   it("throws on zero prices", () => {
@@ -174,15 +174,15 @@ describe("generateSignal", () => {
     expect(result).toHaveProperty("ema21");
     expect(result).toHaveProperty("emaCrossover");
     expect(result).toHaveProperty("macd");
-    expect(result).toHaveProperty("aiConfidence");
+    expect(result).toHaveProperty("confluenceScore");
     expect(result).toHaveProperty("signal");
   });
 
-  it("aiConfidence is clamped to [0, 100]", () => {
+  it("confluenceScore is clamped to [0, 100]", () => {
     const prices = buildPrices(60, "up");
-    const { aiConfidence } = generateSignal(prices, prices[prices.length - 1]);
-    expect(aiConfidence).toBeGreaterThanOrEqual(0);
-    expect(aiConfidence).toBeLessThanOrEqual(100);
+    const { confluenceScore } = generateSignal(prices, prices[prices.length - 1]);
+    expect(confluenceScore).toBeGreaterThanOrEqual(0);
+    expect(confluenceScore).toBeLessThanOrEqual(100);
   });
 
   it("signal is one of BUY, SELL, HOLD", () => {

@@ -46,9 +46,16 @@ export async function sendTelegramSignal(signalData: {
   text: string;
   parse_mode?: string;
 }): Promise<{ ok: boolean; description?: string }> {
+  const secret = import.meta.env.VITE_TELEGRAM_PROXY_SECRET;
+  if (!secret) {
+    throw new Error("VITE_TELEGRAM_PROXY_SECRET is not configured");
+  }
   const response = await fetch("/api/telegram/send", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-telegram-secret": secret,
+    },
     body: JSON.stringify(signalData),
   });
   if (!response.ok) {
