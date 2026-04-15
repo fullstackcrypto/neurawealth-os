@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+dist
+build
+.venv
+bot/__pycache__/
+**/__pycache__/
+*.log
+.env
+bot/.env
+.manus-logs/

@@ -4,18 +4,18 @@ AI-powered crypto intelligence bot for Telegram with live trading signals, portf
 
 ## Features
 
-| Feature | Free | Premium ($49/mo) | Enterprise ($149/mo) |
-|---|---|---|---|
-| Live crypto prices (`/price`) | Yes | Yes | Yes |
-| Trending coins (`/trending`) | Yes | Yes | Yes |
-| AI trading signals (`/signals`) | — | Yes | Yes |
-| Portfolio tracker (`/portfolio`) | — | Yes | Yes |
-| Price alerts (`/alert`) | — | Yes | Yes |
-| Daily market reports (`/report`) | — | Yes | Yes |
-| Auto-signal delivery (4h) | — | Yes | Yes |
-| Daily summary (8 AM UTC) | — | Yes | Yes |
-| API access | — | — | Yes |
-| Priority signals | — | — | Yes |
+| Feature                          | Free | Premium ($49/mo) | Enterprise ($149/mo) |
+| -------------------------------- | ---- | ---------------- | -------------------- |
+| Live crypto prices (`/price`)    | Yes  | Yes              | Yes                  |
+| Trending coins (`/trending`)     | Yes  | Yes              | Yes                  |
+| AI trading signals (`/signals`)  | —    | Yes              | Yes                  |
+| Portfolio tracker (`/portfolio`) | —    | Yes              | Yes                  |
+| Price alerts (`/alert`)          | —    | Yes              | Yes                  |
+| Daily market reports (`/report`) | —    | Yes              | Yes                  |
+| Auto-signal delivery (4h)        | —    | Yes              | Yes                  |
+| Daily summary (8 AM UTC)         | —    | Yes              | Yes                  |
+| API access                       | —    | —                | Yes                  |
+| Priority signals                 | —    | —                | Yes                  |
 
 ## Signal Generation
 
@@ -95,19 +95,19 @@ bot/
 
 ## Commands
 
-| Command | Description | Tier |
-|---|---|---|
-| `/start` | Welcome message with platform overview | Free |
-| `/price [coin]` | Live price of any cryptocurrency | Free |
-| `/trending` | Top trending coins from CoinGecko | Free |
-| `/help` | Full command list with descriptions | Free |
-| `/subscribe` | View subscription tiers and payment links | Free |
-| `/signals` | Top 3 BUY signals with confidence scores | Premium |
-| `/portfolio` | View portfolio with live valuations | Premium |
-| `/add [coin] [amount]` | Add coin to portfolio | Premium |
-| `/remove [coin]` | Remove coin from portfolio | Premium |
-| `/alert [coin] [price]` | Set price alert | Premium |
-| `/report` | Daily performance summary | Premium |
+| Command                 | Description                               | Tier    |
+| ----------------------- | ----------------------------------------- | ------- |
+| `/start`                | Welcome message with platform overview    | Free    |
+| `/price [coin]`         | Live price of any cryptocurrency          | Free    |
+| `/trending`             | Top trending coins from CoinGecko         | Free    |
+| `/help`                 | Full command list with descriptions       | Free    |
+| `/subscribe`            | View subscription tiers and payment links | Free    |
+| `/signals`              | Top 3 BUY signals with confidence scores  | Premium |
+| `/portfolio`            | View portfolio with live valuations       | Premium |
+| `/add [coin] [amount]`  | Add coin to portfolio                     | Premium |
+| `/remove [coin]`        | Remove coin from portfolio                | Premium |
+| `/alert [coin] [price]` | Set price alert                           | Premium |
+| `/report`               | Daily performance summary                 | Premium |
 
 ## Automated Features
 

@@ -34,11 +34,11 @@ STRIPE_ENTERPRISE_PRICE_ID: str = os.getenv("STRIPE_ENTERPRISE_PRICE_ID", "price
 # Stripe Payment Link URLs (hardcoded — created 2025-04-03)
 STRIPE_PREMIUM_PAYMENT_LINK: str = os.getenv(
     "STRIPE_PREMIUM_LINK",
-    "https://buy.stripe.com/test_cNi14f76afEw2WSfA5eIw00",
+    "https://buy.stripe.com/5kQfZ989m66Ua9B7mnfjG02",
 )
 STRIPE_ENTERPRISE_PAYMENT_LINK: str = os.getenv(
     "STRIPE_ENTERPRISE_LINK",
-    "https://buy.stripe.com/test_5kQ14f4Y22RKapk87DeIw01",
+    "https://buy.stripe.com/bJe3cn61e3YM3LdcGHfjG03",
 )
 
 # ── Free Trial & Referral ────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ SUBSCRIPTION_TIERS = {
         "emoji": "⭐",
         "payment_link": os.getenv(
             "STRIPE_PREMIUM_LINK",
-            "https://buy.stripe.com/test_cNi14f76afEw2WSfA5eIw00",
+            "https://buy.stripe.com/5kQfZ989m66Ua9B7mnfjG02",
         ),
     },
     "enterprise": {
@@ -95,7 +95,7 @@ SUBSCRIPTION_TIERS = {
         "emoji": "🏢",
         "payment_link": os.getenv(
             "STRIPE_ENTERPRISE_LINK",
-            "https://buy.stripe.com/test_5kQ14f4Y22RKapk87DeIw01",
+            "https://buy.stripe.com/bJe3cn61e3YM3LdcGHfjG03",
         ),
     },
 }
