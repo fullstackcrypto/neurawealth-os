@@ -82,10 +82,16 @@ export function calculateMACD(prices: number[]): {
   const ema26 = calculateEMA(prices, 26);
   const macdLine: number[] = ema12.map((v, i) => v - ema26[i]);
   validateFiniteArray(macdLine, 9, "calculateMACD");
-  const signalLine = calculateEMA(macdLine.slice(-9), 9);
+  // Compute signal line inline — MACD values can be negative, so we cannot
+  // pass them through calculateEMA which validates for positive prices.
+  const macdSlice = macdLine.slice(-9);
+  const sigMultiplier = 2 / (9 + 1);
+  let signalValue = macdSlice[0];
+  for (let i = 1; i < macdSlice.length; i++) {
+    signalValue = (macdSlice[i] - signalValue) * sigMultiplier + signalValue;
+  }
   const macd = macdLine[macdLine.length - 1];
-  const signal = signalLine[signalLine.length - 1];
-  return { macd, signal, histogram: macd - signal };
+  return { macd, signal: signalValue, histogram: macd - signalValue };
 }
 
 export type SignalType = "BUY" | "SELL" | "HOLD";
