@@ -185,6 +185,8 @@ export default defineConfig({
       ".manusvm.computer",
       "localhost",
       "127.0.0.1",
+      "neurawealth-os.xyz",
+      "www.neurawealth-os.xyz",
     ],
     fs: {
       strict: true,
