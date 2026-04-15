@@ -40,21 +40,19 @@ export interface BotCommand {
  * Send a message via the backend Telegram proxy.
  * The bot token never leaves the server — the client only calls this
  * endpoint, which forwards the request to the Telegram Bot API.
+ * The server restricts outbound messages to a pre-configured chat ID
+ * allowlist (TELEGRAM_ALLOWED_CHAT_IDS), so no secret needs to be
+ * embedded in the client bundle.
  */
 export async function sendTelegramSignal(signalData: {
   chat_id: string | number;
   text: string;
   parse_mode?: string;
 }): Promise<{ ok: boolean; description?: string }> {
-  const proxySecret = import.meta.env.VITE_TELEGRAM_PROXY_SECRET;
-  if (!proxySecret) {
-    throw new Error("VITE_TELEGRAM_PROXY_SECRET is not configured");
-  }
   const response = await fetch("/api/telegram/send", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-telegram-secret": proxySecret,
     },
     body: JSON.stringify(signalData),
   });

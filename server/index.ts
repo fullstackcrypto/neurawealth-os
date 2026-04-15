@@ -52,16 +52,25 @@ app.use(express.json({ limit: "64kb" }));
 
 // ── Telegram send proxy ───────────────────────────────────────────────────────
 // Keeps TELEGRAM_BOT_TOKEN server-side — never exposed to the client bundle.
-// Requests must include an x-telegram-secret header matching TELEGRAM_PROXY_SECRET.
+// Outbound messages are restricted to the server-configured TELEGRAM_ALLOWED_CHAT_IDS
+// allowlist so this endpoint cannot be used as an open relay.
 app.post("/api/telegram/send", async (req, res) => {
-  const proxySecret = process.env.TELEGRAM_PROXY_SECRET;
-  if (!proxySecret) {
-    res.status(503).json({ error: "Telegram bot not configured" });
+  // Gate outbound messages to a server-side allowlist of chat IDs.
+  // Set TELEGRAM_ALLOWED_CHAT_IDS to a comma-separated list of numeric chat IDs
+  // (e.g. "-1001234567890,987654321"). Requests targeting any other chat_id are
+  // rejected with 403 so the proxy cannot be used as an open relay.
+  const rawAllowed = process.env.TELEGRAM_ALLOWED_CHAT_IDS;
+  if (!rawAllowed) {
+    res.status(503).json({ error: "Telegram proxy not configured" });
     return;
   }
-
-  const clientSecret = req.headers["x-telegram-secret"];
-  if (!clientSecret || clientSecret !== proxySecret) {
+  const allowedIds = rawAllowed.split(",").map(s => s.trim()).filter(Boolean);
+  const rawChatId = req.body?.chat_id;
+  const chatId =
+    typeof rawChatId === "string" || typeof rawChatId === "number"
+      ? String(rawChatId)
+      : "";
+  if (!chatId || !allowedIds.includes(chatId)) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
