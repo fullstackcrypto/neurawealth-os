@@ -4,6 +4,7 @@
  */
 
 export function calculateEMA(prices: number[], period: number): number[] {
+  if (prices.length === 0) return [];
   const ema: number[] = [];
   const multiplier = 2 / (period + 1);
   ema[0] = prices[0];
@@ -72,9 +73,10 @@ export function generateSignal(
   prices: number[],
   currentPrice: number
 ): TechnicalSignal {
-  const rsi = calculateRSI(prices);
-  const ema9 = calculateEMA(prices, 9);
-  const ema21 = calculateEMA(prices, 21);
+  const validPrices = prices.filter(p => Number.isFinite(p));
+  const rsi = calculateRSI(validPrices);
+  const ema9 = calculateEMA(validPrices, 9);
+  const ema21 = calculateEMA(validPrices, 21);
   const ema9Current = ema9[ema9.length - 1];
   const ema21Current = ema21[ema21.length - 1];
   const emaCrossover =
@@ -83,7 +85,7 @@ export function generateSignal(
       : ema9Current < ema21Current * 0.998
         ? "BEARISH"
         : "NEUTRAL";
-  const macd = calculateMACD(prices);
+  const macd = calculateMACD(validPrices);
 
   // AI Confidence Score based on indicator confluence
   let score = 50;
