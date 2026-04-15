@@ -38,7 +38,16 @@ export interface BotCommand {
   handler: (args: string[]) => string;
 }
 
-// Format a crypto signal for Telegram (Markdown V2)
+/**
+ * Send a message via the backend Telegram proxy.
+ * The bot token never leaves the server — the client only calls this
+ * endpoint, which forwards the request to the Telegram Bot API.
+ *
+ * @param signalData - The chat ID, message text, and optional parse mode.
+ * @returns A promise resolving to `{ ok: true }` on success.
+ * @throws If `VITE_TELEGRAM_PROXY_SECRET` is not configured or the server
+ *         returns a non-2xx response.
+ */
 export async function sendTelegramSignal(signalData: {
   chat_id: string | number;
   text: string;
@@ -63,11 +72,7 @@ export async function sendTelegramSignal(signalData: {
   return response.json();
 }
 
-/**
- * Send a message via the backend Telegram proxy.
- * The bot token never leaves the server — the client only calls this
- * endpoint, which forwards the request to the Telegram Bot API.
- */
+// Format a crypto signal for Telegram (Markdown V2)
 export function formatSignalMessage(
   coinName: string,
   symbol: string,
